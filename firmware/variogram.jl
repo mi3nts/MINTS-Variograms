@@ -45,10 +45,10 @@ function Cgm(df)
     for i in 1:10
         # Lag statistics 
         # Lag statistics for profile n
-        df_head = df[1:30,:pm0_1]
-        df_tail = df[i+1:30+i,:pm0_1]#Need to fix the limits,because of the limited length of the vector
-        time_head = df[1:30,:datetime]
-        time_tail = df[i+1:30+i,:datetime]
+        df_head = df[1:35,:pm0_1]
+        df_tail = df[i+1:35+i,:pm0_1]#Need to fix the limits,because of the limited length of the vector
+        time_head = df[1:35,:datetime]
+        time_tail = df[i+1:35+i,:datetime]
         time_diff = time_tail - time_head
         avg_lag = ((Dates.value(sum(time_diff))/30)/1000)/60
         head_tail_diff = df_head - df_tail
@@ -99,6 +99,9 @@ step = vcat(1:10)
 
 Plots.bar(time_vec_profile_1,corr_vec_profile_1,xlabel = "Lag", ylabel = "Correlation", label="", title = "Correlogram for Profile 1")
 Plots.bar(time_vec_profile_2,corr_vec_profile_2,xlabel = "Lag", ylabel = "Correlation", label="", title = "Correlogram for Profile 2")
+
+((Dates.value(sum(df_agg_1[2:36,:datetime] - df_agg_1[1:35,:datetime])))/1000/60/60)>5
+
 
 plot(time_vec_profile_1,γ_vec_profile_1,linewidth=5,xlabel = "Δt (in minutes)", ylabel = "γ(t)", label="", title = "Variogram for Profile 1")
 plot!([91.3094], seriestype="vline",label= "",line=(:dot, 4))

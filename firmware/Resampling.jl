@@ -37,6 +37,12 @@ function resampling_time_series_data(w,tf,df)
   
     elseif (w== "d")
         date_time_rounded = map((x) -> round(x, Dates.Day(tf)), df.datetime)
+        
+    elseif (w == "mon")
+        date_time_rounded = map((x) -> round(x, Dates.Month(tf)), df.datetime)
+
+    elseif (w == "y")
+        date_time_rounded - map((x) -> round(x, Dates.Year(tf)), df.datetime)
     end
     df_agg = select(df,Not(:datetime))
     df_agg.date_time_rounded  = date_time_rounded 

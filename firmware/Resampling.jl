@@ -54,6 +54,8 @@ end
 ########################### Every minute ####################################
 r =resampling_time_series_data("m",1,data_frame)
 
+#should be working for month and year
+
 app = dash()
 trace1 = scatter(;x = r[!,"date_time_rounded"], y = r[!,"pc0_1_mean"],mode= "markers + lines", marker_size = 5, marker_color = :green)
 p1 = plot([trace1])

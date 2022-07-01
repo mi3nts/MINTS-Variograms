@@ -28,6 +28,31 @@ titleDateTick =  "PM 0.1 distribution for "*unique_date[1]
 plot(timeTick,df_agg_1.pm0_1,xrot=30, label = "PM 0.1" ,title = titleDateTick, xlabel = "Time",dpi = 100 )
 #plot(timeTick,df_agg_2.pm0_1,xrot=30, label = "PM 0.1" ,title = titleDateTick, xlabel = "Time",dpi = 100 )
 
+function sillRange(yvector::Vector{Float64}, timevector::Vector{Float64})
+    vec_length = length(yvector)
+    dy_vec = []
+    dt_vec = []
+    slope_vec = []
+
+    for i in 1:vec_length
+        dy = yvector[i+1] - yvector[i]
+        append!(dy_vec, dy)
+        dt = timevector[i+1]-timevector[i]
+        append!(dt_vec, dt)
+        slope = dy/dt
+        append!(slope_vec, slope)        
+
+        if i == (vec_length - 1)
+            break
+        end
+    end
+
+    for i in 1:length(slope_vec)
+        if slope_vec[i] < 0
+            return timevector[i-1], yvector[i-1] #could possible be changed to yvector[i] - will have to see
+        end
+    end
+end
 
 
 function Cgm(df)
@@ -117,9 +142,7 @@ function Cgm(df)
         #append!(time_arr,avg_lag_pm01)
         time_df.time_pm0_1[i] = avg_lag_pm01
 
-        ######################################################################
         ########################### pm0_3 ####################################
-        ######################################################################
 
         df_head_pm03 = df[1:35,:pm0_3] #df is the input dataframe
         df_tail_pm03 = df[i+1:35+i,:pm0_3] #Need to fix the limits,because of the limited length of the vector
@@ -154,9 +177,7 @@ function Cgm(df)
         #append!(time_arr,avg_lag_pm01)
         time_df.time_pm0_3[i] = avg_lag_pm03
 
-        ######################################################################
         ########################### pm0_5 ####################################
-        ######################################################################
 
         df_head_pm05 = df[1:35,:pm0_5] #df is the input dataframe
         df_tail_pm05 = df[i+1:35+i,:pm0_5] #Need to fix the limits,because of the limited length of the vector
@@ -191,9 +212,7 @@ function Cgm(df)
         #append!(time_arr,avg_lag_pm01)
         time_df.time_pm0_5[i] = avg_lag_pm05
 
-        ######################################################################
         ########################### pm1_0 ####################################
-        ######################################################################
 
         df_head_pm10 = df[1:35,:pm1_0] #df is the input dataframe
         df_tail_pm10 = df[i+1:35+i,:pm1_0] #Need to fix the limits,because of the limited length of the vector
@@ -228,9 +247,7 @@ function Cgm(df)
         #append!(time_arr,avg_lag_pm01)
         time_df.time_pm1_0[i] = avg_lag_pm10
 
-        ######################################################################
         ########################### pm2_5 ####################################
-        ######################################################################
 
         df_head_pm25 = df[1:35,:pm2_5] #df is the input dataframe
         df_tail_pm25 = df[i+1:35+i,:pm2_5] #Need to fix the limits,because of the limited length of the vector
@@ -265,9 +282,7 @@ function Cgm(df)
         #append!(time_arr,avg_lag_pm01)
         time_df.time_pm2_5[i] = avg_lag_pm25
 
-        ######################################################################
         ########################### pm5_0 ####################################
-        ######################################################################
 
         df_head_pm50 = df[1:35,:pm5_0] #df is the input dataframe
         df_tail_pm50 = df[i+1:35+i,:pm5_0] #Need to fix the limits,because of the limited length of the vector
@@ -302,9 +317,7 @@ function Cgm(df)
         #append!(time_arr,avg_lag_pm01)
         time_df.time_pm5_0[i] = avg_lag_pm50
 
-        ######################################################################
         ########################### pm10_0 ####################################
-        ######################################################################
 
         df_head_pm100 = df[1:35,:pm10_0] #df is the input dataframe
         df_tail_pm100 = df[i+1:35+i,:pm10_0] #Need to fix the limits,because of the limited length of the vector
@@ -377,141 +390,55 @@ function Cgm(df)
     display(plot(plot_array_pm50..., layout=(5,2), size = (1000,1000)))
     display(plot(plot_array_pm100..., layout=(5,2), size = (1000,1000)))
 
-    return corr_df.corr_pm0_1, corr_df.corr_pm0_3, corr_df.corr_pm0_5, corr_df.corr_pm1_0, corr_df.corr_pm2_5, corr_df.corr_pm5_0, corr_df.corr_pm10_0, γh_df.γ_pm0_1, γh_df.γ_pm0_3, γh_df.γ_pm0_5, γh_df.γ_pm1_0, γh_df.γ_pm2_5, γh_df.γ_pm5_0, γh_df.γ_pm10_0, time_df.time_pm0_1, time_df.time_pm0_3, time_df.time_pm0_5, time_df.time_pm1_0, time_df.time_pm2_5, time_df.time_pm5_0, time_df.time_pm10_0
-    #return statement is probably too long
+    return corr_df, γh_df, time_df
 end
 
 Cgm(df_agg_1)
 Cgm(df_agg_2)
 
-########################### pm0_1 ####################################
-
-corr_vec_profile_1_pm01 = Cgm(df_agg_1)[1] #1st return
-corr_vec_profile_2_pm01 = Cgm(df_agg_2)[1]
-
-γ_vec_profile_1_pm01 = Cgm(df_agg_1)[8] 
-γ_vec_profile_2_pm01 = Cgm(df_agg_2)[8] 
-
-time_vec_profile_1_pm01 = Cgm(df_agg_1)[15] 
-time_vec_profile_2_pm01 = Cgm(df_agg_2)[15] 
-
-########################### pm0_3 ####################################
-
-corr_vec_profile_1_pm03 = Cgm(df_agg_1)[2] 
-corr_vec_profile_2_pm03 = Cgm(df_agg_2)[2]
-
-γ_vec_profile_1_pm03 = Cgm(df_agg_1)[9] 
-γ_vec_profile_2_pm03 = Cgm(df_agg_2)[9] 
-
-time_vec_profile_1_pm03 = Cgm(df_agg_1)[16] 
-time_vec_profile_2_pm03 = Cgm(df_agg_2)[16] 
-
-########################### pm0_5 ####################################
-
-corr_vec_profile_1_pm05 = Cgm(df_agg_1)[3] 
-corr_vec_profile_2_pm05 = Cgm(df_agg_2)[3]
-
-γ_vec_profile_1_pm05 = Cgm(df_agg_1)[10] 
-γ_vec_profile_2_pm05 = Cgm(df_agg_2)[10] 
-
-time_vec_profile_1_pm05 = Cgm(df_agg_1)[17] 
-time_vec_profile_2_pm05 = Cgm(df_agg_2)[17] 
-
-########################### pm1_0 ####################################
-
-corr_vec_profile_1_pm10 = Cgm(df_agg_1)[4] 
-corr_vec_profile_2_pm10 = Cgm(df_agg_2)[4]
-
-γ_vec_profile_1_pm10 = Cgm(df_agg_1)[11] 
-γ_vec_profile_2_pm10 = Cgm(df_agg_2)[11] 
-
-time_vec_profile_1_pm10 = Cgm(df_agg_1)[18] 
-time_vec_profile_2_pm10 = Cgm(df_agg_2)[18] 
-
-########################### pm2_5 ####################################
-
-corr_vec_profile_1_pm25 = Cgm(df_agg_1)[5] 
-corr_vec_profile_2_pm25 = Cgm(df_agg_2)[5]
-
-γ_vec_profile_1_pm25 = Cgm(df_agg_1)[12] 
-γ_vec_profile_2_pm25 = Cgm(df_agg_2)[12] 
-
-time_vec_profile_1_pm25 = Cgm(df_agg_1)[19] 
-time_vec_profile_2_pm25 = Cgm(df_agg_2)[19] 
-
-########################### pm5_0 ####################################
-
-corr_vec_profile_1_pm50 = Cgm(df_agg_1)[6] 
-corr_vec_profile_2_pm50 = Cgm(df_agg_2)[6]
-
-γ_vec_profile_1_pm50 = Cgm(df_agg_1)[13] 
-γ_vec_profile_2_pm50 = Cgm(df_agg_2)[13] 
-
-time_vec_profile_1_pm50 = Cgm(df_agg_1)[20] 
-time_vec_profile_2_pm50 = Cgm(df_agg_2)[20] 
-
-########################### pm10_0 ####################################
-
-corr_vec_profile_1_pm100 = Cgm(df_agg_1)[7] 
-corr_vec_profile_2_pm100 = Cgm(df_agg_2)[7]
-
-γ_vec_profile_1_pm100 = Cgm(df_agg_1)[14] 
-γ_vec_profile_2_pm100 = Cgm(df_agg_2)[14] 
-
-time_vec_profile_1_pm100 = Cgm(df_agg_1)[21] 
-time_vec_profile_2_pm100 = Cgm(df_agg_2)[21] 
 
 
+Plots.bar(Cgm(df_agg_1)[3].time_pm0_1,Cgm(df_agg_1)[1].corr_pm0_1,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM0.1 Correlogram for Profile 1")
+Plots.bar(Cgm(df_agg_2)[3].time_pm0_1,Cgm(df_agg_2)[1].corr_pm0_1,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM0.1 Correlogram for Profile 2")
 
-#probably need a better way to do this ^
+Plots.bar(Cgm(df_agg_1)[3].time_pm0_3,Cgm(df_agg_1)[1].corr_pm0_3,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM0.3 Correlogram for Profile 1")
+Plots.bar(Cgm(df_agg_2)[3].time_pm0_3,Cgm(df_agg_2)[1].corr_pm0_3,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM0.3 Correlogram for Profile 2")
 
+Plots.bar(Cgm(df_agg_1)[3].time_pm0_5,Cgm(df_agg_1)[1].corr_pm0_5,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM0.5 Correlogram for Profile 1")
+Plots.bar(Cgm(df_agg_2)[3].time_pm0_5,Cgm(df_agg_2)[1].corr_pm0_5,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM0.5 Correlogram for Profile 2")
 
-Plots.bar(time_vec_profile_1_pm01,corr_vec_profile_1_pm01,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM0.1 Correlogram for Profile 1")
-Plots.bar(time_vec_profile_2_pm01,corr_vec_profile_2_pm01,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM0.1 Correlogram for Profile 2")
+Plots.bar(Cgm(df_agg_1)[3].time_pm1_0,Cgm(df_agg_1)[1].corr_pm1_0,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM1.0 Correlogram for Profile 1")
+Plots.bar(Cgm(df_agg_2)[3].time_pm1_0,Cgm(df_agg_2)[1].corr_pm1_0,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM1.0 Correlogram for Profile 2")
 
-Plots.bar(time_vec_profile_1_pm03,corr_vec_profile_1_pm03,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM0.3 Correlogram for Profile 1")
-Plots.bar(time_vec_profile_2_pm03,corr_vec_profile_2_pm03,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM0.3 Correlogram for Profile 2")
+Plots.bar(Cgm(df_agg_1)[3].time_pm2_5,Cgm(df_agg_1)[1].corr_pm2_5,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM2.5 Correlogram for Profile 1")
+Plots.bar(Cgm(df_agg_2)[3].time_pm2_5,Cgm(df_agg_2)[1].corr_pm2_5,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM2.5 Correlogram for Profile 2")
 
-Plots.bar(time_vec_profile_1_pm05,corr_vec_profile_1_pm05,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM0.5 Correlogram for Profile 1")
-Plots.bar(time_vec_profile_2_pm05,corr_vec_profile_2_pm05,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM0.5 Correlogram for Profile 2")
+Plots.bar(Cgm(df_agg_1)[3].time_pm5_0,Cgm(df_agg_1)[1].corr_pm5_0,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM5.0 Correlogram for Profile 1")
+Plots.bar(Cgm(df_agg_2)[3].time_pm5_0,Cgm(df_agg_2)[1].corr_pm5_0,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM5.0 Correlogram for Profile 2")
 
-Plots.bar(time_vec_profile_1_pm10,corr_vec_profile_1_pm10,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM1.0 Correlogram for Profile 1")
-Plots.bar(time_vec_profile_2_pm10,corr_vec_profile_2_pm10,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM1.0 Correlogram for Profile 2")
-
-Plots.bar(time_vec_profile_1_pm25,corr_vec_profile_1_pm25,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM2.5 Correlogram for Profile 1")
-Plots.bar(time_vec_profile_2_pm25,corr_vec_profile_2_pm25,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM2.5 Correlogram for Profile 2")
-
-Plots.bar(time_vec_profile_1_pm50,corr_vec_profile_1_pm50,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM5.0 Correlogram for Profile 1")
-Plots.bar(time_vec_profile_2_pm50,corr_vec_profile_2_pm50,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM5.0 Correlogram for Profile 2")
-
-Plots.bar(time_vec_profile_1_pm100,corr_vec_profile_1_pm100,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM10.0 Correlogram for Profile 1")
-Plots.bar(time_vec_profile_2_pm100,corr_vec_profile_2_pm100,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM10.0 Correlogram for Profile 2")
+Plots.bar(Cgm(df_agg_1)[3].time_pm10_0,Cgm(df_agg_1)[1].corr_pm10_0,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM10.0 Correlogram for Profile 1")
+Plots.bar(Cgm(df_agg_2)[3].time_pm10_0,Cgm(df_agg_2)[1].corr_pm10_0,xlabel = "Lag", ylabel = "Correlation", label="", title = "PM10.0 Correlogram for Profile 2")
 
 #((Dates.value(sum(df_agg_1[2:36,:datetime] - df_agg_1[1:35,:datetime])))/1000/60/60)>5 #what does this line do?
 
 
-plot(time_vec_profile_1_pm01, γ_vec_profile_1_pm01, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.1 Variogram for Profile 1")
-plot(time_vec_profile_2_pm01, γ_vec_profile_2_pm01 , linewidth=5, xlabel = "Lag", ylabel = "γ(h)", label="", title = "PM0.1 Variogram for Profile 2")
+plot(Cgm(df_agg_1)[3].time_pm0_1, Cgm(df_agg_1)[2].γ_pm0_1, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.1 Variogram for Profile 1")
+plot(Cgm(df_agg_2)[3].time_pm0_1, Cgm(df_agg_2)[2].γ_pm0_1, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.1 Variogram for Profile 2")
 
-plot(time_vec_profile_1_pm03, γ_vec_profile_1_pm03, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.3 Variogram for Profile 1")
-plot(time_vec_profile_2_pm03, γ_vec_profile_2_pm03, linewidth=5, xlabel = "Lag", ylabel = "γ(h)", label="", title = "PM0.3 Variogram for Profile 2")
+plot(Cgm(df_agg_1)[3].time_pm0_3, Cgm(df_agg_1)[2].γ_pm0_3, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.3 Variogram for Profile 1")
+plot(Cgm(df_agg_2)[3].time_pm0_3, Cgm(df_agg_2)[2].γ_pm0_3, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.3 Variogram for Profile 2")
 
-plot(time_vec_profile_1_pm05, γ_vec_profile_1_pm05, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.5 Variogram for Profile 1")
-plot(time_vec_profile_2_pm05, γ_vec_profile_2_pm05, linewidth=5, xlabel = "Lag", ylabel = "γ(h)", label="", title = "PM0.5 Variogram for Profile 2")
+plot(Cgm(df_agg_1)[3].time_pm0_5, Cgm(df_agg_1)[2].γ_pm0_5, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.5 Variogram for Profile 1")
+plot(Cgm(df_agg_2)[3].time_pm0_5, Cgm(df_agg_2)[2].γ_pm0_5, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.5 Variogram for Profile 2")
 
-plot(time_vec_profile_1_pm10, γ_vec_profile_1_pm10, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM1.0 Variogram for Profile 1")
-plot(time_vec_profile_2_pm10, γ_vec_profile_2_pm10, linewidth=5, xlabel = "Lag", ylabel = "γ(h)", label="", title = "PM1.0 Variogram for Profile 2")
+plot(Cgm(df_agg_1)[3].time_pm1_0, Cgm(df_agg_1)[2].γ_pm1_0, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM1.0 Variogram for Profile 1")
+plot(Cgm(df_agg_2)[3].time_pm1_0, Cgm(df_agg_2)[2].γ_pm1_0, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM1.0 Variogram for Profile 2")
 
-plot(time_vec_profile_1_pm25, γ_vec_profile_1_pm25, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM2.5 Variogram for Profile 1")
-plot(time_vec_profile_2_pm25, γ_vec_profile_2_pm25, linewidth=5, xlabel = "Lag", ylabel = "γ(h)", label="", title = "PM2.5 Variogram for Profile 2")
+plot(Cgm(df_agg_1)[3].time_pm2_5, Cgm(df_agg_1)[2].γ_pm2_5, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM2.5 Variogram for Profile 1")
+plot(Cgm(df_agg_2)[3].time_pm2_5, Cgm(df_agg_2)[2].γ_pm2_5, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM2.5 Variogram for Profile 2")
 
-plot(time_vec_profile_1_pm50, γ_vec_profile_1_pm50, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM5.0 Variogram for Profile 1")
-plot(time_vec_profile_2_pm50, γ_vec_profile_2_pm50, linewidth=5, xlabel = "Lag", ylabel = "γ(h)", label="", title = "PM5.0 Variogram for Profile 2")
+plot(Cgm(df_agg_1)[3].time_pm5_0, Cgm(df_agg_1)[2].γ_pm5_0, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM5.0 Variogram for Profile 1")
+plot(Cgm(df_agg_2)[3].time_pm5_0, Cgm(df_agg_2)[2].γ_pm5_0, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM5.0 Variogram for Profile 2")
 
-plot(time_vec_profile_1_pm100, γ_vec_profile_1_pm100, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM10.0 Variogram for Profile 1")
-plot(time_vec_profile_2_pm100, γ_vec_profile_2_pm100, linewidth=5, xlabel = "Lag", ylabel = "γ(h)", label="", title = "PM10.0 Variogram for Profile 2")
-
-
-#action items:
-#automate horizontal/vertical lines with variogram processing
-
+plot(Cgm(df_agg_1)[3].time_pm10_0, Cgm(df_agg_1)[2].γ_pm10_0, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM10.0 Variogram for Profile 1")
+plot(Cgm(df_agg_2)[3].time_pm10_0, Cgm(df_agg_2)[2].γ_pm10_0, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM10.0 Variogram for Profile 2")

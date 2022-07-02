@@ -24,54 +24,84 @@ function sillRange(timevector::Vector{Float64}, yvector::Vector{Float64})
 
     for i in 1:length(slope_vec)
         if slope_vec[i] < 0
-            return timevector[i-1], yvector[i-1] #could possible be changed to yvector[i] - will have to see
+            return timevector[i], yvector[i] #could possible be changed to yvector[i] - will have to see
+            break
         end
+
     end
 end
 
 
-variogram_df = DataFrame(variogram1 = [],
-                         variogram2 = [],
-                         variogram3 = [])
-#pm25
+variogram_df = DataFrame(variogram1pm01 = [], variogram2pm01 = [], 
+                         variogram1pm03 = [], variogram2pm03 = [], 
+                         variogram1pm05 = [], variogram2pm05 = [], 
+                         variogram1pm10 = [], variogram2pm10 = [], 
+                         variogram1pm25 = [], variogram2pm25 = [], 
+                         variogram1pm50 = [], variogram2pm50 = [], 
+                         variogram1pm100 =[],variogram2pm100 = [])
 
-time25 = [16.21238095238095, 30.804761904761904, 45.52285714285714, 61.338095238095235, 77.39238095238096, 93.51, 109.6, 125.69238095238096, 141.16333333333333, 156.69476190476192]
-y25 = [13.843837129093371, 26.650074745396925, 46.153377198701165, 65.25384534850907, 76.23159420492385, 81.13751798702539, 83.22468029774765, 81.18355503679891, 82.60977161279929, 79.78946049500257]
-time50 = [16.21238095238095, 30.804761904761904, 45.52285714285714, 61.338095238095235, 77.39238095238096, 93.51, 109.6, 125.69238095238096, 141.16333333333333, 156.69476190476192]
-y50 = [19.467326438842676, 34.35451265982, 59.76460576686976, 82.74047943787092, 93.75473092223864, 96.31528841573186, 99.76159076035712, 94.60270795287425, 98.42236746274659, 97.93208124246149]
-time100 = [16.21238095238095, 30.804761904761904, 45.52285714285714, 61.338095238095235, 77.39238095238096, 93.51, 109.6, 125.69238095238096, 141.16333333333333, 156.69476190476192]
-y100 = [19.467326438842676, 34.35451265982, 59.76460576686976, 82.74047943787092, 93.75473092223864, 96.31528841573186, 99.76159076035712, 94.60270795287425, 98.42236746274659, 97.9692113052307]
+timepf1 = CSV.read("C:/Users/va648/VSCode/MINTS-LoRa-Variograms-master/firmware/data/timepf1.csv", DataFrame)
+timepf2 = CSV.read("C:/Users/va648/VSCode/MINTS-LoRa-Variograms-master/firmware/data/timepf2.csv", DataFrame)
+ypf1 = CSV.read("C:/Users/va648/VSCode/MINTS-LoRa-Variograms-master/firmware/data/ypf1.csv", DataFrame)
+ypf2 = CSV.read("C:/Users/va648/VSCode/MINTS-LoRa-Variograms-master/firmware/data/ypf2.csv", DataFrame)
 
-push!(variogram_df.variogram1, plot(time25, y25, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM2.5 Variogram for Profile 1"))
-push!(variogram_df.variogram2, plot(time50, y50, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM5.0 Variogram for Profile 1"))
-push!(variogram_df.variogram3, plot(time100, y100, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM10.0 Variogram for Profile 1"))
+push!(variogram_df.variogram1pm01, plot(timepf1.time_pm0_1, ypf1.γ_pm0_1, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.1 Variogram for Profile 1"))
+push!(variogram_df.variogram1pm03, plot(timepf1.time_pm0_3, ypf1.γ_pm0_3, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.3 Variogram for Profile 1"))
+push!(variogram_df.variogram1pm05, plot(timepf1.time_pm0_5, ypf1.γ_pm0_5, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.5 Variogram for Profile 1"))
+push!(variogram_df.variogram1pm10, plot(timepf1.time_pm1_0, ypf1.γ_pm1_0, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM1.0 Variogram for Profile 1"))
+push!(variogram_df.variogram1pm25, plot(timepf1.time_pm2_5, ypf1.γ_pm2_5, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM2.5 Variogram for Profile 1"))
+push!(variogram_df.variogram1pm50, plot(timepf1.time_pm5_0, ypf1.γ_pm5_0, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM5.0 Variogram for Profile 1"))
+push!(variogram_df.variogram1pm100, plot(timepf1.time_pm10_0, ypf1.γ_pm10_0, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM10.0 Variogram for Profile 1"))
 
+push!(variogram_df.variogram2pm01, plot(timepf2.time_pm0_1, ypf2.γ_pm0_1, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.1 Variogram for Profile 2"))
+push!(variogram_df.variogram2pm03, plot(timepf2.time_pm0_3, ypf2.γ_pm0_3, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.3 Variogram for Profile 2"))
+push!(variogram_df.variogram2pm05, plot(timepf2.time_pm0_5, ypf2.γ_pm0_5, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.5 Variogram for Profile 2"))
+push!(variogram_df.variogram2pm10, plot(timepf2.time_pm1_0, ypf2.γ_pm1_0, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM1.0 Variogram for Profile 2"))
+push!(variogram_df.variogram2pm25, plot(timepf2.time_pm2_5, ypf2.γ_pm2_5, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM2.5 Variogram for Profile 2"))
+push!(variogram_df.variogram2pm50, plot(timepf2.time_pm5_0, ypf2.γ_pm5_0, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM5.0 Variogram for Profile 2"))
+push!(variogram_df.variogram2pm100, plot(timepf2.time_pm10_0, ypf2.γ_pm10_0, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM10.0 Variogram for Profile 2"))
 
-# plot([1, 2, 3, 4, 5], [1, 4, 9, 16, 25])
-# vline!([2], label= "rand",line=(:dot, 7))
-# hline!([4], label= "rand",line=(:dot, 7))
+plt1pm01 = plot(variogram_df.variogram1pm01..., size=(1000,1000))
+vline!([sillRange(timepf1.time_pm0_1, ypf1.γ_pm0_1)[1]],label= "", line=(:dot, 7)) #range then sill
+hline!([sillRange(timepf1.time_pm0_1,ypf1.γ_pm0_1)[2]],label= "", line=(:dot, 7))
+display(plt1pm01)
+empty!(variogram_df.variogram1pm01)
+plt2pm01 = plot(variogram_df.variogram2pm01..., size=(1000,1000))
+vline!([sillRange(timepf2.time_pm0_1, ypf2.γ_pm0_1)[1]],label= "", line=(:dot, 7))
+hline!([sillRange(timepf2.time_pm0_1,ypf2.γ_pm0_1)[2]],label= "", line=(:dot, 7))
+display(plt2pm01)
+empty!(variogram_df.variogram2pm01)
 
-# plot([1, 2, 3, 4, 5], [1, 16, 12, 17, 25])
-# vline!([3], label= "rand",line=(:dot, 7))
-# hline!([12], label= "rand",line=(:dot, 7))
+plt1pm03 = plot(variogram_df.variogram1pm03..., size=(1000,1000))
+vline!([sillRange(timepf1.time_pm0_3, ypf1.γ_pm0_3)[1]],label= "", line=(:dot, 7))
+hline!([sillRange(timepf1.time_pm0_3,ypf1.γ_pm0_3)[2]],label= "", line=(:dot, 7))
+display(plt1pm03)
+empty!(variogram_df.variogram1pm03)
+# plt2pm03 = plot(variogram_df.variogram2pm03..., size=(1000,1000))
+# vline!([sillRange(timepf2.time_pm0_3, ypf2.γ_pm0_3)[1]],label= "range", line=(:dot, 7))
+# hline!([sillRange(timepf2.time_pm0_3,ypf2.γ_pm0_3)[2]],label= "sill", line=(:dot, 7))
+# display(plt2pm03)
+# empty!(variogram_df.variogram2pm03)
+#no downward trend
 
-plt1 = plot(variogram_df.variogram1..., size = (1000,1000))
-vline!([sillRange(time25, y25)[1]], label= "range",line=(:dot, 7))
-hline!([sillRange(time25, y25)[2]], label= "sill",line=(:dot, 7))
-display(plt1)
-empty!(variogram_df.variogram1)
-plt2 = plot(variogram_df.variogram2..., size = (1000,1000))
-vline!([sillRange(time50, y50)[1]], label= "range",line=(:dot, 7))
-hline!([sillRange(time50, y50)[2]], label= "sill",line=(:dot, 7))
-display(plt2)
-empty!(variogram_df.variogram2)
-plt3 = plot(variogram_df.variogram3..., size = (1000,1000))
-vline!([sillRange(time100, y100)[1]], label= "range",line=(:dot, 7))
-hline!([sillRange(time100, y100)[2]], label= "sill",line=(:dot, 7))
-display(plt3)
-empty!(variogram_df.variogram3)
+plt1pm05 = plot(variogram_df.variogram1pm05..., size=(1000,1000))
+vline!([sillRange(timepf1.time_pm0_5, ypf1.γ_pm0_5)[1]],label= "", line=(:dot, 7))
+hline!([sillRange(timepf1.time_pm0_5,ypf1.γ_pm0_5)[2]],label= "", line=(:dot, 7))
+display(plt1pm05)
+empty!(variogram_df.variogram1pm01)
+plt2pm05 = plot(variogram_df.variogram2pm05..., size=(1000,1000))
+vline!([sillRange(timepf2.time_pm0_5, ypf2.γ_pm0_5)[1]],label= "", line=(:dot, 7))
+hline!([sillRange(timepf2.time_pm0_5,ypf2.γ_pm0_5)[2]],label= "", line=(:dot, 7))
+display(plt2pm05)
+empty!(variogram_df.variogram2pm05)
 
-
-# print(dy_vec)
-# print(dt_vec)
-# print(slope_vec)
+plt1pm10 = plot(variogram_df.variogram1pm10..., size=(1000,1000))
+vline!([sillRange(timepf1.time_pm1_0, ypf1.γ_pm1_0)[1]],label= "", line=(:dot, 7))
+hline!([sillRange(timepf1.time_pm1_0, ypf1.γ_pm1_0)[2]],label= "", line=(:dot, 7))
+display(plt1pm10)
+empty!(variogram_df.variogram1pm10)
+plt2pm10 = plot(variogram_df.variogram2pm10..., size=(1000,1000))
+vline!([sillRange(timepf2.time_pm1_0, ypf2.γ_pm1_0)[1]],label= "", line=(:dot, 7))
+hline!([sillRange(timepf2.time_pm1_0,ypf2.γ_pm1_0)[2]],label= "", line=(:dot, 7))
+display(plt2pm10)
+empty!(variogram_df.variogram2pm10)

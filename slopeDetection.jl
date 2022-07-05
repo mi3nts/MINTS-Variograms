@@ -24,7 +24,7 @@ function sillRange(timevector::Vector{Float64}, yvector::Vector{Float64})
 
     for i in 1:length(slope_vec)
         if slope_vec[i] < 0
-            return timevector[i], yvector[i] #could possible be changed to yvector[i] - will have to see
+            return timevector[i], yvector[i] #could possible be changed to yvector[i-1] - will have to see
             break
         end
 

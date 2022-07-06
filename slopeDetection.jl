@@ -1,6 +1,26 @@
 using Plots, GeoStats, Variography, DataFrames, CSV
 
 
+function checkNeg(slopevec)
+    val = 0
+
+    for i in 1:length(slopevec)
+        if slopevec[i] > 0
+            val = val
+        elseif slopevec[i] < 0
+            val = val - 1
+        elseif slopevec[i] == 0
+            val = val
+        end
+    end
+
+    if val == 0
+        return true
+    elseif val != 0
+        return false
+end
+end
+
 function sillRange(timevector::Vector{Float64}, yvector::Vector{Float64})
     vec_length = length(yvector)
     dy_vec = []
@@ -27,7 +47,10 @@ function sillRange(timevector::Vector{Float64}, yvector::Vector{Float64})
             return timevector[i], yvector[i] #could possible be changed to yvector[i-1] - will have to see
             break
         end
+    end
 
+    if checkNeg(slope_vec)
+        return last(timevector), last(yvector)
     end
 end
 
@@ -77,11 +100,11 @@ vline!([sillRange(timepf1.time_pm0_3, ypf1.γ_pm0_3)[1]],label= "", line=(:dot, 
 hline!([sillRange(timepf1.time_pm0_3,ypf1.γ_pm0_3)[2]],label= "", line=(:dot, 7))
 display(plt1pm03)
 empty!(variogram_df.variogram1pm03)
-# plt2pm03 = plot(variogram_df.variogram2pm03..., size=(1000,1000))
-# vline!([sillRange(timepf2.time_pm0_3, ypf2.γ_pm0_3)[1]],label= "range", line=(:dot, 7))
-# hline!([sillRange(timepf2.time_pm0_3,ypf2.γ_pm0_3)[2]],label= "sill", line=(:dot, 7))
-# display(plt2pm03)
-# empty!(variogram_df.variogram2pm03)
+plt2pm03 = plot(variogram_df.variogram2pm03..., size=(1000,1000))
+vline!([sillRange(timepf2.time_pm0_3, ypf2.γ_pm0_3)[1]],label= "", line=(:dot, 7))
+hline!([sillRange(timepf2.time_pm0_3,ypf2.γ_pm0_3)[2]],label= "", line=(:dot, 7))
+display(plt2pm03)
+empty!(variogram_df.variogram2pm03)
 #no downward trend
 
 plt1pm05 = plot(variogram_df.variogram1pm05..., size=(1000,1000))

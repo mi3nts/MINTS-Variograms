@@ -1,4 +1,4 @@
-using Plots, GeoStats, Variography, DataFrames
+using Plots, GeoStats, Variography, DataFrames, CSV
 
 
 function sillRange(timevector::Vector{Float64}, yvector::Vector{Float64})

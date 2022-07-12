@@ -63,10 +63,10 @@ variogram_df = DataFrame(variogram1pm01 = [], variogram2pm01 = [],
                          variogram1pm50 = [], variogram2pm50 = [], 
                          variogram1pm100 =[],variogram2pm100 = [])
 
-timepf1 = CSV.read("C:/Users/va648/VSCode/MINTS-LoRa-Variograms-master/firmware/data/timepf1.csv", DataFrame)
-timepf2 = CSV.read("C:/Users/va648/VSCode/MINTS-LoRa-Variograms-master/firmware/data/timepf2.csv", DataFrame)
-ypf1 = CSV.read("C:/Users/va648/VSCode/MINTS-LoRa-Variograms-master/firmware/data/ypf1.csv", DataFrame)
-ypf2 = CSV.read("C:/Users/va648/VSCode/MINTS-LoRa-Variograms-master/firmware/data/ypf2.csv", DataFrame)
+timepf1 = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/timepf1.csv", DataFrame)
+timepf2 = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/timepf2.csv", DataFrame)
+ypf1 = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/ypf1.csv", DataFrame)
+ypf2 = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/ypf2.csv", DataFrame)
 
 push!(variogram_df.variogram1pm01, plot(timepf1.time_pm0_1, ypf1.γ_pm0_1, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.1 Variogram for Profile 1"))
 push!(variogram_df.variogram1pm03, plot(timepf1.time_pm0_3, ypf1.γ_pm0_3, linewidth=5, xlabel = "Lag", ylabel = "γ(t)", label="", title = "PM0.3 Variogram for Profile 1"))

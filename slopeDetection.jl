@@ -128,3 +128,4 @@ vline!([sillRange(timepf2.time_pm1_0, ypf2.γ_pm1_0)[1]],label= "", line=(:dot, 
 hline!([sillRange(timepf2.time_pm1_0,ypf2.γ_pm1_0)[2]],label= "", line=(:dot, 7))
 display(plt2pm10)
 empty!(variogram_df.variogram2pm10)
+

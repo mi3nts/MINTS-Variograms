@@ -14,18 +14,21 @@ df = data_frame[ls_index, :]
 #initialize georef data
 𝒟 = georef((Z=df.pm2_5, ))
 
-#empirical variogram
+#empirical variogram - same thing as semivariogram
 g = EmpiricalVariogram(𝒟, :Z, maxlag=300.)
 
-plot(g, label="")
+plot(g, label = "")
 γ = fit(Variogram, g)
-plot!(γ, label="")
-hline!([γ.nugget], label="")
-hline!([γ.sill], label="")
+plot!(γ, label = "")
+hline!([γ.nugget], label = "")
+hline!([γ.sill], label = "")
 
+println("nugget: " * string(γ.nugget))
+println("sill: " * string(γ.sill))
 
-print("nugget: " * string(γ.nugget))
-print("sill: " string(γ.sill))
-
-# print(γ.range)
-
+#MLJ rmse testing
+#are these error metrics supposed to measure discrepancies between variogram fit and empirical variogram itself?
+# y = [1, 2, 3, 4]
+# ŷ = [2, 3, 3, 3]
+# rms(y, ŷ)
+# mav(y, ŷ)

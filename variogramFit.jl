@@ -1,4 +1,4 @@
-using GeoStats, Plots, DataFrames, CSV, Dates
+using GeoStats, Plots, DataFrames, CSV, Dates, MLJ
 
 data_frame = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/MINTS_001e06373996_IPS7100_2022_01_02.csv", DataFrame) 
 ms = [parse(Float64,x[20:26]) for x in data_frame[!,:dateTime]]
@@ -15,6 +15,17 @@ df = data_frame[ls_index, :]
 𝒟 = georef((Z=df.pm2_5, ))
 
 #empirical variogram
-g = EmpiricalVariogram(𝒟, :Z, maxlag=100.)
+g = EmpiricalVariogram(𝒟, :Z, maxlag=300.)
 
-plot(g)
+plot(g, label="")
+γ = fit(Variogram, g)
+plot!(γ, label="")
+hline!([γ.nugget], label="")
+hline!([γ.sill], label="")
+
+
+print("nugget: " * string(γ.nugget))
+print("sill: " string(γ.sill))
+
+# print(γ.range)
+

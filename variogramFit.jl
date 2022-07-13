@@ -18,3 +18,6 @@ df = data_frame[ls_index, :]
 g = EmpiricalVariogram(𝒟, :Z, maxlag=100.)
 
 plot(g)
+γ = fit(Variogram, g)
+
+plot!(γ)

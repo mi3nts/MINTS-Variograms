@@ -45,18 +45,10 @@ for elm in mqtt_dir
                             if 30<gps_df[!, 2][1]<33 && -98<gps_df[!, 3][1]<-94
                                 pm_df = CSV.read(checkLatLong[2], DataFrame)
                                 append!(raw_df, pm_df)
-                            else
-                                continue
                             end
-                        else
-                            continue
                         end
                     end
-                else
-                    continue
                 end
-            else
-                continue
             end
             
             end

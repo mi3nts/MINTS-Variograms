@@ -3,23 +3,24 @@ using CSV, DataFrames, Dates
 raw_df = DataFrame()
 sorted_df = DataFrame()
 
-function checkLatLong(list)
+#IPS7100 = PM, BME280 = T,P,H
+function checkLatLong(list, sensor_output)
     GPGGA = 1
-    PM = 1
+    weather_sensor = 1
     for i in 1:length(list)
         if occursin("GPGGA", list[i])
             GPGGA = i
-        elseif occursin("IPS7100", list[i])
-            PM = i
+        elseif occursin(sensor_output, list[i])
+            weather_sensor = i
         else
             continue
         end
     end
 
-    if GPGGA == 0 && PM == 0
+    if GPGGA == 0 && weather_sensor == 0
         return false
     else
-        return true, GPGGA, PM
+        return true, GPGGA, weather_sensor
     end
 end
 
@@ -38,6 +39,7 @@ end
 
 #only reads june data for now
 #change mqtt dir path
+
 mqtt_dir = readdir("D:/rawMqttMFS/")
 for elm in mqtt_dir
     elm_path = "D:/rawMqttMFS/" * elm
@@ -58,12 +60,12 @@ for elm in mqtt_dir
                         if length(date_dir) == 0
                             continue
                         else
-                            if checkLatLong(date_dir)[1]
-                                gps_df = CSV.read(date_path * date_dir[checkLatLong(date_dir)[2]], DataFrame)
+                            if checkLatLong(date_dir, "BME280")[1]
+                                gps_df = CSV.read(date_path * date_dir[checkLatLong(date_dir, "BME280")[2]], DataFrame)
                                 if 30<gps_df[!, 2][1]<33 && -98<gps_df[!, 3][1]<-94
-                                    pm_df = CSV.read(date_path * date_dir[checkLatLong(date_dir)[3]], DataFrame)
-                                    if length(names(pm_df)) == 15
-                                        append!(raw_df, pm_df)
+                                    sensor_df = CSV.read(date_path * date_dir[checkLatLong(date_dir, "BME280")[3]], DataFrame)
+                                    if length(names(sensor_df)) == 4
+                                        append!(raw_df, sensor_df)
                                     end
                                 end
                             end
@@ -75,10 +77,7 @@ for elm in mqtt_dir
     end
 end
 
-raw_df = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/juneData.csv", DataFrame)
-
 #print(raw_df)
 #CSV.write("C:/Users/va648/VSCode/MINTS-Variograms/data/juneData.csv", raw_df)
 sorted_df = timeSeriesSort(raw_df)
-CSV.write("C:/Users/va648/VSCode/MINTS-Variograms/data/juneSortedData.csv", sorted_df)
-
+CSV.write("C:/Users/va648/VSCode/MINTS-Variograms/data/sortedLoRaData/June/juneSortedBME280Data.csv", sorted_df)

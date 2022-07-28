@@ -1,8 +1,8 @@
-using CSV, DataFrames
+using CSV, DataFrames, Dates
 
 raw_df = DataFrame()
+sorted_df = DataFrame()
 
-#works
 function checkLatLong(list)
     GPGGA = 1
     PM = 1
@@ -21,10 +21,23 @@ function checkLatLong(list)
     else
         return true, GPGGA, PM
     end
+end
 
+function timeSeriesSort(df)
+
+    ms = [parse(Float64, x[20:26]) for x in df[!,:dateTime]]
+    ms = string.(round.(ms,digits = 3)*1000)
+    ms = chop.(ms,tail= 2)
+    df.dateTime =  chop.(df.dateTime,tail= 6)
+    df.dateTime = df.dateTime.* ms
+    df.dateTime = DateTime.(df.dateTime,"yyyy-mm-dd HH:MM:SS.sss")
+    df.dateTime = sort(df.dateTime)
+
+    return df
 end
 
 #only reads june data for now
+#change mqtt dir path
 mqtt_dir = readdir("D:/rawMqttMFS/")
 for elm in mqtt_dir
     elm_path = "D:/rawMqttMFS/" * elm
@@ -62,6 +75,10 @@ for elm in mqtt_dir
     end
 end
 
-#testing
-print(raw_df)
-CSV.write("C:/Users/va648/VSCode/MINTS-Variograms/data/juneData.csv", raw_df)
+raw_df = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/juneData.csv", DataFrame)
+
+#print(raw_df)
+#CSV.write("C:/Users/va648/VSCode/MINTS-Variograms/data/juneData.csv", raw_df)
+sorted_df = timeSeriesSort(raw_df)
+CSV.write("C:/Users/va648/VSCode/MINTS-Variograms/data/juneSortedData.csv", sorted_df)
+

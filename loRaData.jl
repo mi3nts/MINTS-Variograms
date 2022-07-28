@@ -63,6 +63,7 @@ for elm in mqtt_dir
                             if checkLatLong(date_dir, "BME280")[1]
                                 gps_df = CSV.read(date_path * date_dir[checkLatLong(date_dir, "BME280")[2]], DataFrame)
                                 if 30<gps_df[!, 2][1]<33 && -98<gps_df[!, 3][1]<-94
+                                    node_count = node_count + 1
                                     sensor_df = CSV.read(date_path * date_dir[checkLatLong(date_dir, "BME280")[3]], DataFrame)
                                     if length(names(sensor_df)) == 4
                                         append!(raw_df, sensor_df)
@@ -76,6 +77,55 @@ for elm in mqtt_dir
         end
     end
 end
+
+node_count = 0
+
+mqtt_dir = readdir("D:/rawMqttMFS/")
+for elm in mqtt_dir
+    elm_path = "D:/rawMqttMFS/" * elm
+    elm_dir = readdir(elm_path)
+    if length(elm_dir) == 0
+        continue
+    else
+        for file in elm_dir
+            if file == "2022"
+                year_path = elm_path * "/2022/" 
+                year_dir = readdir(year_path)
+                if "04" in year_dir || "05" in year_dir || "06" in year_dir
+                    if isdir(year_path * "04/")
+                        month_path = year_path * "04/"
+                    elseif isdir(year_path* "05/")
+                        month_path = year_path * "05/"
+                    elseif isdir(year_path * "06/")
+                        month_path = year_path * "06/"
+                    end
+
+                    month_dir = readdir(month_path)
+                    if length(month_dir) != 0
+                        date_path = month_path *  month_dir[1] * "/" ##
+                        date_dir = readdir(date_path)
+                        if checkLatLong(date_dir, "BME280")[1] || checkLatLong(date_dir, "IPS7100")[1]
+                            #check if the directory has either a bme or ips file, if it does, find gps file
+                            if checkLatLong(date_dir, "BME280")[1]
+                                gps_df = CSV.read(date_path * date_dir[checkLatLong(date_dir, "BME280")[2]], DataFrame)
+
+                            elseif checkLatLong(date_dir, "IPS7100")[1]
+                                gps_df = CSV.read(date_path * date_dir[checkLatLong(date_dir, "IPS7100")[2]], DataFrame)
+                            end
+
+                            if 30<gps_df[!, 2][1]<33 && -98<gps_df[!, 3][1]<-94
+                                node_count = node_count + 1
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+print(node_count)
+#returns a total of 57 unique nodes
 
 #print(raw_df)
 #CSV.write("C:/Users/va648/VSCode/MINTS-Variograms/data/juneData.csv", raw_df)

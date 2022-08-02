@@ -1,4 +1,4 @@
-using CSV,DataFrames, Dates, Statistics, Variography, GeoStats,DataStructures,Plots
+using CSV,DataFrames, Dates, Statistics, GeoStats,Variography,DataStructures,Plots
 
 function time_series(path)
     data_frame = CSV.read(path,DataFrame)
@@ -19,13 +19,12 @@ function time_series(path)
 end
 
 df_agg_1 = time_series("D://UTD//UTDFall2021//LoRa//VariogramsLoRa//firmware//data//MINTS_47db5580001e0039_IPS7100_2021_12_12.csv")
-df_agg_2 = time_series("D://UTD//UTDFall2021//LoRa//VariogramsLoRa//firmware//data//MINTS_47db558000390039_IPS7100_2021_12_12.csv")
-
+lora_len = nrow(df_agg_1)
 timeTick = Dates.format.(df_agg_1.datetime, "HH:MM:SS")
 DateTick = Dates.format.(df_agg_1.datetime, "yyyy-mm-dd")
 unique_date = unique(DateTick)
 titleDateTick =  "PM 0.1 distribution for "*unique_date[1]
-plot(timeTick,df_agg_1.pm0_1,xrot=30, label = "PM 0.1" ,title = titleDateTick, xlabel = "Time",dpi = 100 )
+plot(timeTick,df_agg_1.pm0_1,xrot=30, ylabel = "PM0.1",label="",title = titleDateTick, xlabel = "Time",dpi = 100 )
 #plot(timeTick,df_agg_2.pm0_1,xrot=30, label = "PM 0.1" ,title = titleDateTick, xlabel = "Time",dpi = 100 )
 
 
@@ -35,24 +34,24 @@ function Cgm(df)
     DateTick = Dates.format.(df.datetime, "yyyy-mm-dd")
     unique_date = unique(DateTick)
     titleDateTick =  "PM 0.1 distribution for "*unique_date[1]
-    plot(timeTick,df.pm0_1,xrot=30, label = "PM 0.1" ,title = titleDateTick, xlabel = "Time",dpi = 100 )
+    plot(timeTick,df.pm0_1,xrot=30, ylabel = "PM 0.1",label = "" ,title = titleDateTick, xlabel = "Time",dpi = 100 )
 
-
+    n_len = 10
     plot_array = Any[]
-    corr_vec = Vector{Float64}()
+    corr_vec = Any[]
     time_arr = Any[] 
-    γh = Vector{Float64}()
-    for i in 1:10
+    γh = Any[] 
+    for i in 1:n_len
         # Lag statistics 
         # Lag statistics for profile n
-        df_head = df[1:35,:pm0_1]
-        df_tail = df[i+1:35+i,:pm0_1]#Need to fix the limits,because of the limited length of the vector
-        time_head = df[1:35,:datetime]
-        time_tail = df[i+1:35+i,:datetime]
+        df_head = df[1:lora_len - n_len,:pm0_1]
+        df_tail = df[i+1:lora_len-n_len + i,:pm0_1]#Need to fix the limits,because of the limited length of the vector
+        time_head = df[1:lora_len - n_len,:datetime]
+        time_tail = df[i+1:lora_len-n_len + i,:datetime]
         time_diff = time_tail - time_head
-        avg_lag = ((Dates.value(sum(time_diff))/30)/1000)/60
+        avg_lag = ((Dates.value(sum(time_diff))/lora_len - n_len)/1000)/60
         head_tail_diff = df_head - df_tail
-        γ = sum(head_tail_diff.^2)/(2*30)
+        γ = sum(head_tail_diff.^2)/(2*(lora_len - n_len))
         println("lag ", i," Statistics")
         println("Avg Lag",avg_lag)
         # Head Statistics
@@ -104,6 +103,41 @@ Plots.bar(time_vec_profile_2,corr_vec_profile_2,xlabel = "Lag", ylabel = "Correl
 
 
 plot(time_vec_profile_1,γ_vec_profile_1,linewidth=5,xlabel = "Δt (in minutes)", ylabel = "γ(t)", label="", title = "Variogram for Profile 1")
-plot!([91.3094], seriestype="vline",label= "",line=(:dot, 4))
-plot!([0.0012], seriestype="hline",label= "",line=(:dot, 4))
-plot(time_vec_profile_2,γ_vec_profile_2,xlabel = "Lag", ylabel = "γ(h)", label="", title = "Variogram for Profile 2")
+plot!([75], seriestype="vline",label= "",line=(:dot, 4))
+plot!([0.00105], seriestype="hline",label= "",line=(:dot, 4))
+#plot(time_vec_profile_2,γ_vec_profile_2,xlabel = "Lag", ylabel = "γ(h)", label="", title = "Variogram for Profile 2")
+
+
+
+
+
+# Empirical Variograms
+
+# using GeoStats
+# using Plots
+
+# # attribute table
+# table = (Z=[1.,0.,1.],)
+
+# # coordinates for each row
+# coord = [(25.,25.), (50.,75.), (75.,50.)]
+
+# # georeference data
+# 𝒟 = georef(table, coord)
+
+# # estimation domain
+# 𝒢 = CartesianGrid(100, 100)
+
+# # estimation problem
+# problem = EstimationProblem(𝒟, 𝒢, :Z)
+
+# # choose a solver from the list of solvers
+# solver = Kriging(
+#   :Z => (variogram=GaussianVariogram(range=35.),)
+# )
+
+# # solve the problem
+# solution = solve(problem, solver)
+
+# # plot the solution
+# contourf(solution, clabels=true)

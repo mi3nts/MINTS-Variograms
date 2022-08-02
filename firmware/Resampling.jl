@@ -41,6 +41,7 @@ function resampling_time_series_data(w,tf,df)
     df_agg = select(df,Not(:datetime))
     df_agg.date_time_rounded  = date_time_rounded 
     gdf_date_time =  groupby(df_agg, :date_time_rounded)
+    println(gdf_date_time)
     resampled_timeseries_data = combine(gdf_date_time, valuecols(gdf_date_time) .=> mean)
     return resampled_timeseries_data
 

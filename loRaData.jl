@@ -130,7 +130,7 @@ function nodeCount()
 end
 
 #returns 57
-#gaps bar graph
+
 pm_df = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/sortedLoRaData/Compiled/sortedAprilJunePMData.csv", DataFrame)
 pm_mins = [parse(Int64, x[15:16]) for x in pm_df[!,:dateTime]]
 discrepancy_arr = []
@@ -164,7 +164,6 @@ end
 print(bar_arr)
 Plots.bar(date_discrepancy_arr, bar_arr, xlabel = "Date", ylabel = "Amount of 1 minute Gaps in Data", label="", title = "")
 #println(length(discrepancy_arr))
-#lora timeseries
 
 data_frame = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/sortedLoRaData/Compiled/sortedAprilJunePMData.csv", DataFrame)
 data_frame.dateTime =  chop.(data_frame.dateTime,tail= 10)
@@ -186,11 +185,24 @@ for group in gd
     end
     append!(minute_agg_df, row_df)
 end
-print(minute_agg_df)
+#print(minute_agg_df)
 
-CSV.write("C:/Users/va648/VSCode/MINTS-Variograms/data/minute.csv", minute_agg_df)
+#CSV.write("C:/Users/va648/VSCode/MINTS-Variograms/data/minute.csv", minute_agg_df)
+minute_agg_df = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/minute.csv", DataFrame)
 
 data = (datetime = [minute_agg_df.dateTime[i] for i in 1:length(minute_agg_df.dateTime)],
-        col1 = [minute_agg_df.pm2_5[i] for i in 1:length(minute_agg_df.dateTime)])
+        col1 = [minute_agg_df.pm0_1[i] for i in 1:length(minute_agg_df.dateTime)],
+        col2 = [minute_agg_df.pm0_3[i] for i in 1:length(minute_agg_df.dateTime)],
+        col3 = [minute_agg_df.pm0_5[i] for i in 1:length(minute_agg_df.dateTime)],
+        col4 = [minute_agg_df.pm1_0[i] for i in 1:length(minute_agg_df.dateTime)],
+        col5 = [minute_agg_df.pm2_5[i] for i in 1:length(minute_agg_df.dateTime)],
+        col6 = [minute_agg_df.pm5_0[i] for i in 1:length(minute_agg_df.dateTime)],
+        col7 = [minute_agg_df.pm10_0[i] for i in 1:length(minute_agg_df.dateTime)], )
 ta = TimeArray(data; timestamp = :datetime, meta = "Example")
-plot(ta[:col1])
+plot(ta[:col1], xlabel = "Date", ylabel = "PM 0.1 Concentration", label="PM0.1", title = "PM0.1 LoRa Node April - June TimeSeries")
+plot(ta[:col2], xlabel = "Date", ylabel = "PM 0.3 Concentrations", label="PM0.3", title = "PM 0.3 LoRa Node April - June TimeSeries")
+plot(ta[:col3], xlabel = "Date", ylabel = "PM 0.5 Concentrations", label="PM0.5", title = "PM 0.5 LoRa Node April - June TimeSeries")
+plot(ta[:col4], xlabel = "Date", ylabel = "PM 1.0 Concentrations", label="PM1.0", title = "PM 1.0 LoRa Node April - June TimeSeries")
+plot(ta[:col5], xlabel = "Date", ylabel = "PM 2.5 Concentrations", label="PM2.5", title = "PM 2.5 LoRa Node April - June TimeSeries")
+plot(ta[:col6], xlabel = "Date", ylabel = "PM 5.0 Concentrations", label="PM5.0", title = "PM 5.0 LoRa Node April - June TimeSeries")
+plot(ta[:col7], xlabel = "Date", ylabel = "PM 10.0 Concentrations", label="PM10.0", title = "PM 10.0 LoRa Node April - June TimeSeries")

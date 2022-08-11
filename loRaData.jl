@@ -6,7 +6,7 @@ sorted_df = DataFrame()
 function checkLatLong(list, sensor_output)
     GPGGA = 1
     weather_sensor = 1
-    for i in 1:length(list)
+    for i in 1:length(list) 
         if occursin("GPGGA", list[i])
             GPGGA = i
         elseif occursin(sensor_output, list[i])
@@ -131,78 +131,75 @@ end
 
 #returns 57
 
-pm_df = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/sortedLoRaData/Compiled/sortedAprilJunePMData.csv", DataFrame)
-pm_mins = [parse(Int64, x[15:16]) for x in pm_df[!,:dateTime]]
-discrepancy_arr = []
-date_discrepancy_arr = []
-for i in 1:length(pm_df.dateTime)
-    if i < length(pm_df.dateTime)
-        if pm_mins[i+1] - pm_mins[i] > 1
-            push!(discrepancy_arr, pm_df.dateTime[i])
-            if pm_df.dateTime[i][6:10] in date_discrepancy_arr
-                continue
-            else
-                push!(date_discrepancy_arr, pm_df.dateTime[i][6:10])
+function discrepancyDetection(path)
+    pm_df = CSV.read(path, DataFrame)
+    pm_mins = [parse(Int64, x[15:16]) for x in pm_df[!,:dateTime]]
+    discrepancy_arr = []
+    date_discrepancy_arr = []
+    for i in 1:length(pm_df.dateTime)
+        if i < length(pm_df.dateTime)
+            if pm_mins[i+1] - pm_mins[i] > 1
+                push!(discrepancy_arr, pm_df.dateTime[i])
+                if pm_df.dateTime[i][6:10] in date_discrepancy_arr
+                    continue
+                else
+                    push!(date_discrepancy_arr, pm_df.dateTime[i][6:10])
+                end
             end
         end
     end
-end
-print(discrepancy_arr)
-println("##################")
-print(date_discrepancy_arr)
 
-bar_arr = Vector{Int64}(undef, length(date_discrepancy_arr))
-for i in 1:length(date_discrepancy_arr)
-    count = 0
-    for j in 1:length(discrepancy_arr)
-        if occursin(date_discrepancy_arr[i], discrepancy_arr[j])
-            count = count + 1
+    bar_arr = Vector{Int64}(undef, length(date_discrepancy_arr))
+    for i in 1:length(date_discrepancy_arr)
+        count = 0
+        for j in 1:length(discrepancy_arr)
+            if occursin(date_discrepancy_arr[i], discrepancy_arr[j])
+                count = count + 1
+            end
         end
+        bar_arr[i] = count
     end
-    bar_arr[i] = count
+    return date_discrepancy_arr, bar_arr
 end
-print(bar_arr)
-Plots.bar(date_discrepancy_arr, bar_arr, xlabel = "Date", ylabel = "Amount of 1 minute Gaps in Data", label="", title = "")
-#println(length(discrepancy_arr))
 
-data_frame = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/sortedLoRaData/Compiled/sortedAprilJunePMData.csv", DataFrame)
+Plots.bar(discrepancyDetection("C:/Users/va648/VSCode/MINTS-Variograms/data/sortedLoRaData/Compiled/sortedAprilJunePMData.csv")[1], discrepancyDetection("C:/Users/va648/VSCode/MINTS-Variograms/data/sortedLoRaData/Compiled/sortedAprilJunePMData.csv")[2], xlabel = "Date", ylabel = "Amount of 1 minute Gaps in Data", label="", title = "")
+
+
+#make the below automated
+
+data_frame = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/sortedLoRaData/Compiled/sortedAprilJuneTPHData.csv", DataFrame)
 data_frame.dateTime =  chop.(data_frame.dateTime,tail= 10)
 data_frame.dateTime = DateTime.(data_frame.dateTime,"yyyy-mm-dd HH:MM")
 gd = groupby(data_frame, :dateTime)
-#minute_agg_df = DataFrame()
+minute_agg_df = DataFrame()
 for group in gd
     row_df = DataFrame(dateTime = [],
-                    pm0_1 = [],
-                    pm0_3 = [],
-                    pm0_5 = [],
-                    pm1_0 = [],
-                    pm2_5 = [],
-                    pm5_0 = [],
-                    pm10_0 = [])
+                    Temperature = [],
+                    Pressure = [],
+                    Humidity = [])
     push!(row_df[!, :dateTime], group.dateTime[1])
-    for i in [:pm0_1,:pm0_3,:pm0_5,:pm1_0,:pm2_5,:pm5_0,:pm10_0]
-        append!(row_df[!, i], last(cumsum(group[!, i]))/length(group[!, i]))
+    for i in [:Temperature, :Pressure, :Humidity]
+        append!(row_df[!, i], sum(group[!, i])/length(group[!, i]))
     end
     append!(minute_agg_df, row_df)
 end
-#print(minute_agg_df)
+minute_agg_df = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/sortedLoRaData/Compiled/MinuteAverage/minuteTPH.csv", DataFrame)
 
-#CSV.write("C:/Users/va648/VSCode/MINTS-Variograms/data/minute.csv", minute_agg_df)
-minute_agg_df = CSV.read("C:/Users/va648/VSCode/MINTS-Variograms/data/minute.csv", DataFrame)
+omit_arr = []
+for i in 1:length(minute_agg_df.Temperature)
+    if minute_agg_df.Temperature[i] < 0
+        append!(omit_arr, i)
+    end
+end
 
-data = (datetime = [minute_agg_df.dateTime[i] for i in 1:length(minute_agg_df.dateTime)],
-        col1 = [minute_agg_df.pm0_1[i] for i in 1:length(minute_agg_df.dateTime)],
-        col2 = [minute_agg_df.pm0_3[i] for i in 1:length(minute_agg_df.dateTime)],
-        col3 = [minute_agg_df.pm0_5[i] for i in 1:length(minute_agg_df.dateTime)],
-        col4 = [minute_agg_df.pm1_0[i] for i in 1:length(minute_agg_df.dateTime)],
-        col5 = [minute_agg_df.pm2_5[i] for i in 1:length(minute_agg_df.dateTime)],
-        col6 = [minute_agg_df.pm5_0[i] for i in 1:length(minute_agg_df.dateTime)],
-        col7 = [minute_agg_df.pm10_0[i] for i in 1:length(minute_agg_df.dateTime)], )
-ta = TimeArray(data; timestamp = :datetime, meta = "Example")
-plot(ta[:col1], xlabel = "Date", ylabel = "PM 0.1 Concentration", label="PM0.1", title = "PM0.1 LoRa Node April - June TimeSeries")
-plot(ta[:col2], xlabel = "Date", ylabel = "PM 0.3 Concentrations", label="PM0.3", title = "PM 0.3 LoRa Node April - June TimeSeries")
-plot(ta[:col3], xlabel = "Date", ylabel = "PM 0.5 Concentrations", label="PM0.5", title = "PM 0.5 LoRa Node April - June TimeSeries")
-plot(ta[:col4], xlabel = "Date", ylabel = "PM 1.0 Concentrations", label="PM1.0", title = "PM 1.0 LoRa Node April - June TimeSeries")
-plot(ta[:col5], xlabel = "Date", ylabel = "PM 2.5 Concentrations", label="PM2.5", title = "PM 2.5 LoRa Node April - June TimeSeries")
-plot(ta[:col6], xlabel = "Date", ylabel = "PM 5.0 Concentrations", label="PM5.0", title = "PM 5.0 LoRa Node April - June TimeSeries")
-plot(ta[:col7], xlabel = "Date", ylabel = "PM 10.0 Concentrations", label="PM10.0", title = "PM 10.0 LoRa Node April - June TimeSeries")
+minute_agg_df = delete!(minute_agg_df, omit_arr)
+
+data_TPH = (datetime = [minute_agg_df.dateTime[i] for i in 1:length(minute_agg_df.dateTime)],
+        col1 = [minute_agg_df.Temperature[i] for i in 1:length(minute_agg_df.dateTime)],
+        col2 = [minute_agg_df.Pressure[i] for i in 1:length(minute_agg_df.dateTime)],
+        col3 = [minute_agg_df.Humidity[i] for i in 1:length(minute_agg_df.dateTime)])
+ta = TimeArray(data_TPH; timestamp = :datetime, meta = "Example")
+plot(ta[:col1], xlabel = "Date", ylabel = "Temperature/Pressure Readings", label = "Temperature", title = "Temperature/Pressure/Humidity LoRa Node April - June TimeSeries", size = (1200, 1000), legend = :topleft, yticks = [0, 25, 50, 75, 100, 125, 150])
+plot!(ta[:col3], xlabel = "Date", ylabel = "Temperature/Pressure Readings", label = "Humidity")
+plot!(twinx(), ta[:col2], color = :red, xlabel = "Date", ylabel = "Humidity Readings", label= "Pressure", title = "Temperature/Pressure/Humidity LoRa Node April - June TimeSeries")
+savefig("C:/Users/va648/VSCode/MINTS-Variograms/plots/TPH Compiled TimeSeries.png")

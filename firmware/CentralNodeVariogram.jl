@@ -1,150 +1,175 @@
-using CSV,DataFrames, Dates, Statistics, GeoStats,Variography,DataStructures,Plots,Distances,Polynomials
-#x = reshape([0.1, 0.3, -0.1], 3, 1);
-Distances.euclidean([0.5], [1.0])
-# function time_series(path)
-#     data_frame = CSV.read(path,DataFrame)
-#     μs = [parse(Float64,x[20:26]) for x in data_frame[!,:dateTime]]
-#     data_frame.μs  = Second.(round.(Int,μs))
-#     data_frame.dateTime = [x[1:19] for x in data_frame[!,:dateTime]]
-#     data_frame.dateTime = DateTime.(data_frame.dateTime,"yyyy-mm-dd HH:MM:SS")
-#     data_frame.dateTime = data_frame.dateTime + data_frame.μs
-#     data_frame = select!(data_frame, Not(:μs))
-#     df_agg = select(data_frame,Not(:dateTime))
-#     function change_data(x)
-#         x = convert(Vector{Float64}, x)
-#         return x
-#     end
-#     mapcols!(change_data, df_agg)
-#     df_agg.datetime = data_frame.dateTime
-#     return df_agg
+using Pkg
+Pkg.activate("D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\LoRa")
+using DelimitedFiles,CSV,DataFrames,Dates,Statistics,DataStructures,Plots,TimeSeries,Impute,LaTeXStrings
+using StatsBase, Statistics,Polynomials,Peaks,RollingFunctions
+
+# ----------------- Central Node Paul Quinn October 10th 2022 --------------------
+# With Imputed Data and Rounding the data to the nearest second
+function data_cleaning( path_to_csv)
+    data_frame = CSV.read(path_to_csv,DataFrame)
+    ms = [parse(Float64,x[20:26]) for x in data_frame[!,:dateTime]]
+    data_frame.ms  = Second.(round.(Int,ms))
+    data_frame.dateTime = [x[1:19] for x in data_frame[!,:dateTime]]
+    data_frame.dateTime = DateTime.(data_frame.dateTime,"yyyy-mm-dd HH:MM:SS")
+    data_frame.dateTime = data_frame.dateTime + data_frame.ms
+    data_frame = select!(data_frame, Not(:ms))
+    col_symbols = Symbol.(names(data_frame))
+    data_frame = DataFrames.combine(DataFrames.groupby(data_frame, :dateTime), col_symbols[2:end] .=> mean)
+    return data_frame,col_symbols
+end
+
+path_to_ips7100 = "D://UTD//UTDFall2022//VariogramsLoRa//firmware//data//001e063739c7//MINTS_001e063739c7_IPS7100_2022_10_05.csv"
+col_symbols = data_cleaning(path_to_ips7100)[2]
+data_frame = data_cleaning(path_to_ips7100)[1]
+
+# #Seasonality
+# df = data_frame
+# df = DataFrames.rename!(df, col_symbols)
+# names(df)
+
+# date_time_rounded = map((x) -> round(x, Dates.Hour(1)), df.dateTime)  
+# df_agg = select(df,Not(:dateTime))
+# df_agg.date_time_rounded  = date_time_rounded 
+# gdf_date_time =  groupby(df_agg, :date_time_rounded)
+# resampled_timeseries_data = combine(gdf_date_time, valuecols(gdf_date_time) .=> mean)
+# resampled_timeseries_data = DataFrames.rename!(resampled_timeseries_data, col_symbols)
+# cols = Symbol.([["dateTime"]; col_symbols[9:15]])
+
+# df_hourly = hcat(resampled_timeseries_data.dateTime,resampled_timeseries_data[:,9:15])
+# df_hourly = DataFrames.rename!(df_hourly, cols)
+
+# strpm0_1 = "PM"*latexstring("_{0.1}")
+# strpm0_3 = "PM"*latexstring(" _{0.3}")
+# strpm0_5 = "PM"*latexstring("_{0.5}")
+# strpm1_0 = "PM"*latexstring("_{1.0}")
+# strpm2_5 = "PM"*latexstring("_{2.5}")
+# strpm5_0 = "PM"*latexstring("_{5.0}")
+# strpm10_0 = "PM"*latexstring("_{10.0}")
+
+# y_unit = "(μg/cm3)"#*latexstring("_{0.1}")
+# ylab = "PM concentrations"
+# y_vals = names(df_hourly)[2:end]
+# xlab = "DateTime"
+# lab = [strpm0_1, strpm0_3, strpm0_5, strpm1_0, strpm2_5, strpm5_0, strpm10_0]
+
+# p=0
+# for i in 1:length(lab)
+#     p = plot!(df_hourly.dateTime,df_hourly[!,y_vals[i]], xlabel = "DateTime " ,
+#             ylabel = "PM concentrations "*y_unit, label = lab[i], 
+#             legend = :right, linewidth=4, legendfontsize=12, xrotation = 45,size=(800,500))
+# end
+# display(p)
+
+## Imputing the empty spaces with the Nearest Value
+
+df = data_frame
+###################Some issue with imputation logic, need to fix it
+df = DataFrame()
+df.dateTime = collect(data_frame.dateTime[1]:Second(1):data_frame.dateTime[length(data_frame.dateTime)])
+df = outerjoin( df,data_frame, on = :dateTime)
+sort!(df, (:dateTime))
+df = DataFrames.rename!(df, col_symbols)
+df = Impute.locf(df)
+
+df_mat = select!(df, Not(col_symbols[1:8]))
+mat_updated =  Matrix{Float64}(undef, 0, 7)
+
+mat = Matrix(df_mat)
+#mat_head = mat[1:43200,:]
+
+#Calculating the last 900 shifts
+diff_mat_updated =  Matrix{Float64}(undef, 900,1)
+mat_head = mat[84000:84899,1]
+for h in 1:1:900
+    mat_tail = mat[(84000+h):(84899+h),1]
+    #print(size(mat_tail))
+    @inbounds diff_mat_updated = hcat(diff_mat_updated,(mat_head - mat_tail).^2)
+end
+
+
+diff_mat =  Matrix{Float64}(undef, 84000,1)
+mat_head = mat[1:83999,1]
+
+for h in 1:1:900
+    mat_tail = mat[(h+1):(h+83999),1]
+    @inbounds diff_mat = hcat(diff_mat,(mat_head - mat_tail).^2)
+    #mat_updated =  vcat(mat_updated,diff_mat)
+end
+
+for i in 1:1:900:
+    vcat(diff_mat[i],diff_mat_updated[i])
+end
+# mat_pm0_1_var = Matrix{Any}(undef,7200,7200)
+# mat_pm0_3_var = Matrix{Any}(undef,7200,7200)
+# mat_pm0_5_var = Matrix{Any}(undef,7200,7200)
+mat_pm_var_1 = Matrix{Any}(undef,900,900)
+# mat_pm2_5_var = Matrix{Any}(undef,7200,7200)
+# mat_pm5_0_var = Matrix{Any}(undef,7200,7200)
+# mat_pm10_0_var = Matrix{Any}(undef,7200,7200)
+# for i in 1:1:7200
+#     mat_pm01_var =  hcat(mat_pm01_var,diff_mat_updated[i][:,1])
 # end
 
-# #df_agg_1 = time_series("D://UTD//UTDFall2021//LoRa//VariogramsLoRa//firmware//data//MINTS_001e06373996_IPS7100_2022_01_01.csv")
-# df_agg_1 = time_series("D://UTD//UTDFall2021//LoRa//VariogramsLoRa//firmware//data//MINTS_001e06373996_IPS7100_2022_01_02.csv")
-
-# timeTick = Dates.format.(df_agg_1.datetime, "HH:MM:SS")
-# DateTick = Dates.format.(df_agg_1.datetime, "yyyy-mm-dd")
-# unique_date = unique(DateTick)
-# titleDateTick =  "PM 0.1 distribution for "*unique_date[1]
-# plot(timeTick,df_agg_1.pm0_1,xrot=30,label = "", ylabel = "PM 0.1" ,title = titleDateTick, xlabel = "Time",dpi = 100 )
-# #plot(timeTick,df_agg_2.pm0_1,xrot=30, label = "PM 0.1" ,title = titleDateTick, xlabel = "Time",dpi = 100 )
-
-
-# df= df_agg_1
-# #function Cgm(df)
-
-# timeTick = Dates.format.(df.datetime, "HH:MM:SS")
-# DateTick = Dates.format.(df.datetime, "yyyy-mm-dd")
-# unique_date = unique(DateTick)
+Dict("pm0_1")
+for i in 1:1:900
+    for j in 1:1:7
+    # mat_pm0_1_var[:,i] = diff_mat_updated[i][:,1]
+    # mat_pm0_3_var[:,i] = diff_mat_updated[i][:,2]
+    # mat_pm0_5_var[:,i] = diff_mat_updated[i][:,3]
+        mat_pm_var_1[:,i] = diff_mat_updated[i][:,j]
+    # mat_pm2_5_var[:,i] = diff_mat_updated[i][:,5]
+    # mat_pm5_0_var[:,i] = diff_mat_updated[i][:,6]
+    # mat_pm10_0_var[:,i] = diff_mat_updated[i][:,7]
+    end
+end
+#fix the issue with concatenation try concatenting horizontally and save the data in hdf5
+# v = cat(diff_mat_updated)
+# println(size(v[1]))
 
 
-# plot_array = Any[]
-# corr_vec = Any[]
-# time_arr = Any[] 
-# γh = Any[]
-# n = names(df)[8:14]
-# for k in n
-#     for i=1:1:2000
-#         # Lag statistics 
-#         # Lag statistics for profile n
-#         df_head = df[1:14400,k]
-#         df_tail = df[i+1:14400+i,k]#Need to fix the limits,because of the limited length of the vector
-#         time_head = df[1:14400,:datetime]
-#         time_tail = df[i+1:14400+i,:datetime]
-#         time_diff = time_tail - time_head
-#         #println("time_diff",time_diff)
-#         avg_lag = ((Dates.value(sum(time_diff))/14400)/1000)/60
-#         head_tail_diff = df_head - df_tail
-#         γ = sum(head_tail_diff.^2)/(2*14400)
-#         #println("lag ", i," Statistics")
-#         #println("Avg Lag",avg_lag)
-#         # Head Statistics
-#         head_mean = mean(df_head)
-#         #println("head mean: ",head_mean)
-#         head_variance = var(df_head)
-#         #println("head variance: ",head_variance,)
+# mat_pm0_1_var_new = Matrix{Any}(undef,21600,7200)
+# mat_pm0_3_var_new = Matrix{Any}(undef,21600,7200)
+# mat_pm0_5_var_new = Matrix{Any}(undef,21600,7200)
+mat_pm1_0_var_new = Matrix{Any}(undef,84000,900)
+# mat_pm2_5_var_new = Matrix{Any}(undef,21600,7200)
+# mat_pm5_0_var_new = Matrix{Any}(undef,21600,7200)
+# mat_pm10_0_var_new = Matrix{Any}(undef,21600,7200)
 
-#         # Tail Statistics
-#         tail_mean = mean(df_tail)
-#         #println("tail mean: ",tail_mean)
-#         tail_variance = var(df_tail)
-#         #println("tail variance: ",tail_variance)
+for i in 1:1:900
+    # mat_pm0_1_var_new[:,i] = diff_mat[i][:,1]
+    # mat_pm0_3_var_new[:,i] = diff_mat[i][:,2]
+    # mat_pm0_5_var_new[:,i] = diff_mat[i][:,3]
+    mat_pm1_0_var_new[:,i] = diff_mat[i][:,4]
+    # mat_pm2_5_var_new[:,i] = diff_mat[i][:,5]
+    # mat_pm5_0_var_new[:,i] = diff_mat[i][:,6]
+    # mat_pm10_0_var_new[:,i] = diff_mat[i][:,7]
+end
 
-#         #Correlation between Head and Tail
-#         corr = cor(df_head,df_tail)
-#         append!(corr_vec,corr)
-#         append!(γh,γ)
-#         append!(time_arr,avg_lag)
-#         #println("lag ",i," correlation between head and tail: ", corr)
-#         topic = "Lag " *string(i)
-#         label_1 = "R: "*string(corr)[1:6]*", "
-#         label_2 = "γ: "*string(γ)[1:6] 
-#         lab = [label_1,label_2]
-#         push!(plot_array,Plots.scatter(df_tail,df_head,xlabel = "tail", ylabel = "head",title = topic, label= label_1*label_2 ))
-        
-#     end
-#     corr_vec = []
-#     γh = []
-#     time_arr = []
-#     plot_title = "Lag Statistics for "*k 
-#     display(plot(plot_array..., layout=(5,2),size = (1000,1000),plot_title))
-#     #return corr_vec,γh,time_arr
-# end
-# #end
-# Cgm(df_agg_1)
-# #Cgm(df_agg_2)
-
-# corr_vec_profile_1 = Cgm(df_agg_1)[1]
-# #corr_vec_profile_2 = Cgm(df_agg_2)[1]
-
-# γ_vec_profile_1 = Cgm(df_agg_1)[2]
-# #γ_vec_profile_2 = Cgm(df_agg_2)[2]
-
-# time_vec_profile_1 = Cgm(df_agg_1)[3]
-# #time_vec_profile_2 = Cgm(df_agg_2)[3]
+# mat_rolling_pm0_1  = vcat(mat_pm0_1_var_new,mat_pm0_1_var)
+# mat_rolling_pm0_3  = vcat(mat_pm0_3_var_new,mat_pm0_3_var)
+# mat_rolling_pm0_5  = vcat(mat_pm0_5_var_new,mat_pm0_5_var)
+mat_rolling_pm1_0  = vcat(mat_pm1_0_var_new,mat_pm1_0_var)
+# mat_rolling_pm2_5  = vcat(mat_pm2_5_var_new,mat_pm2_5_var)
+# mat_rolling_pm5_0  = vcat(mat_pm5_0_var_new,mat_pm5_0_var)
+# mat_rolling_pm10_0  = vcat(mat_pm10_0_var_new,mat_pm10_0_var)
 
 
-# #Plots.bar(time_vec_profile_1,corr_vec_profile_1,xlabel = "Lag", ylabel = "Correlation", label="", title = "Correlogram for Profile 1")
-# #Plots.bar(time_vec_profile_2,corr_vec_profile_2,xlabel = "Lag", ylabel = "Correlation", label="", title = "Correlogram for Profile 2")
+#pm_0_1_rolling [21601:28000,:]
+#DataFrame(pm0_1_rolling[21601:28800,:],:auto)
 
-# #((Dates.value(sum(df_agg_1[2:36,:datetime] - df_agg_1[1:35,:datetime])))/1000/60/60)>5
+writedlm("pm0_1_moving_variogram.csv",mat_rolling_pm0_1)
+writedlm("pm0_3_moving_variogram.csv",mat_rolling_pm0_3)
+writedlm("pm0_5_moving_variogram.csv",mat_rolling_pm0_5)
+writedlm("pm1_0_moving_variogram.csv",mat_rolling_pm1_0)
+writedlm("pm2_5_moving_variogram.csv",mat_rolling_pm2_5)
+writedlm("pm5_0_moving_variogram.csv",mat_rolling_pm5_0)
+writedlm("pm10_0_moving_variogram.csv",mat_rolling_pm10_0)
+# diff_mat_final = Vector{Any}(undef,43200)
+# for i in 1:1:7200
+#     diff_mat_final[i] = vcat(diff_mat[i],diff_mat_updated[i])
+# end 
 
 
-# plot(time_vec_profile_1,γ_vec_profile_1,linewidth=5,xlabel = "Δt (in minutes)", ylabel = "γ(t)", label="", title = "Variogram for Central Node")
-# Variography.WeightedLeastSquares()
-# # Central Node reboots after 8 hrs or 24 hrs. It takes 10 mins to reboot. Consider that while coding  
-# #plot!([93.3094], seriestype="vline",label= "",line=(:dot, 4))
-# #plot!([0.00107], seriestype="hline",label= "",line=(:dot, 4))
-# #plot(time_vec_profile_2,γ_vec_profile_2,xlabel = "Lag", ylabel = "γ(h)", label="", title = "Variogram for Profile 2")
-
-# # Empirical Variograms
-
-# # using GeoStats
-# # using Plots
-
-# # # attribute table
-# # table = (Z=[1.,0.,1.],)
-
-# # # coordinates for each row
-# # coord = [(25.,25.), (50.,75.), (75.,50.)]
-
-# # # georeference data
-# # 𝒟 = georef(table, coord)
-
-# # # estimation domain
-# # 𝒢 = CartesianGrid(100, 100)
-
-# # # estimation problem
-# # problem = EstimationProblem(𝒟, 𝒢, :Z)
-
-# # # choose a solver from the list of solvers
-# # solver = Kriging(
-# #   :Z => (variogram=GaussianVariogram(range=35.),)
-# # )
-
-# # # solve the problem
-# # solution = solve(problem, solver)
-
-# # # plot the solution
-# # contourf(solution, clabels=true)
-
+#@view diff_mat_updated[1:7200,:]
+#sum_arr = cumsum.(diff_mat_final,dims = 1)
+#save as ()

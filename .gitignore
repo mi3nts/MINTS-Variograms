@@ -1,0 +1,6 @@
+**/firmware/trial/*
+**/firmware/data/*
+**/firmware/.ipynb_checkpoints/*
+/firmware/AdvancedVariogramPlots.jl
+/firmware/CentralNodeVariogram.jl
+/firmware/EmpriricalVariogramPaulQuinn.ipynb

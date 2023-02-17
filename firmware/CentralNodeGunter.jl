@@ -1,10 +1,20 @@
 using Pkg
 Pkg.activate("D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\LoRa")
+include("CentralNodeGunter_Wind_TPH.jl")
 using DelimitedFiles,CSV,DataFrames,Dates,Statistics,DataStructures,Plots,TimeSeries,Impute,LaTeXStrings
 using StatsBase, Statistics,Polynomials,Peaks,RollingFunctions,Parsers
 
-function data_cleaning( path_to_csv)
-    data_frame = CSV.read(path_to_csv,DataFrame)
+df_pm_list = []
+for i in 1:1:7
+    push!(df_pm_list, CSV.read(df_csv.IPS7100[i],DataFrame))
+end
+data_frame_pm_combined = reduce(vcat,df_pm_list)
+
+
+
+
+
+function data_cleaning( data_frame)
     ms = [parse(Float64,x[20:26]) for x in data_frame[!,:dateTime]]
     data_frame.ms  = Second.(round.(Int,ms))
     data_frame.dateTime = [x[1:19] for x in data_frame[!,:dateTime]]
@@ -16,19 +26,16 @@ function data_cleaning( path_to_csv)
     return data_frame,col_symbols
 end
 
-path_to_ips7100 = "D://UTD//UTDFall2022//VariogramsLoRa//firmware//data//001e063739c7//2022//10//05//MINTS_001e063739c7_IPS7100_2022_10_05.csv"
-col_symbols = data_cleaning(path_to_ips7100)[2]
-data_frame = data_cleaning(path_to_ips7100)[1]
-
+data_frame,col_symbols = data_cleaning(data_frame_pm_combined)
 
 function rolling_variogram(data_frame,col) 
     df = DataFrame()
-    df.dateTime = collect(data_frame.dateTime[1]:Second(1):data_frame.dateTime[length(data_frame.dateTime)])
-    df = outerjoin( df,data_frame, on = :dateTime)
+    df.dateTime = collect(DateTime(2022,10,01):Second(1):DateTime(2022,10,08)-Second(1))
+    df = outerjoin( df,data_frame, on = :dateTime)[1:length(df.dateTime),:]
     sort!(df, (:dateTime))
     df = DataFrames.rename!(df, col_symbols)
     df = Impute.locf(df)|>Impute.nocb()
-    df = df[1:86400,:]
+
     df_mat = df[:,2:end]
     mat = Matrix(df_mat[1:nrow(df),:])[:,col]
     arr_mat = Array{Float64}[]
@@ -66,7 +73,7 @@ function rolling_variogram(data_frame,col)
         x=[]
     end
 
-    ts = collect(data_frame.dateTime[1]+Minute(15):Second(1):data_frame.dateTime[length(data_frame.dateTime)])
+    ts = collect(DateTime(2022,10,01)+Minute(15):Second(1):DateTime(2022,10,08))
     dict_pm = Dict(1=>"pc0.1",2=>"pc0.3",3=>"pc0.5",4=>"pc1.0",5=>"pc2.5",6=>"pc5.0",7=>"pc10.0",
                    8=>"pm0.1",9=>"pm0.3",10=>"pm0.5",11=>"pm1.0",12=>"pm2.5",13=>"pm5.0",14=>"pm10.0")
 
@@ -91,27 +98,27 @@ pm2_5_rolling_variogram = rolling_variogram(data_frame,12)
 pm5_0_rolling_variogram = rolling_variogram(data_frame,13)
 pm10_0_rolling_variogram = rolling_variogram(data_frame,14)
 
-include("cn_wind_tph.jl")
+
 
 td= 900
 ts_wind = 2
 ts_tph = 10
 wd_rolling_mean = RollingFunctions.rolling(mean,df_wind.windDirectionTrue,Int(td/ts_wind))
 ws_rolling_mean = RollingFunctions.rolling(mean,df_wind.windSpeedMetersPerSecond,Int(td/ts_wind))
-ts_wind = collect(data_frame.dateTime[1]+Minute(15):Second(ts_wind):data_frame.dateTime[length(data_frame.dateTime)])
+timestamp_wind = collect(DateTime(2022,10,01)+Minute(15):Second(ts_wind):data_frame.dateTime[length(data_frame.dateTime)])
 
 temp_rolling_mean = rolling(mean,df_tph.temperature,Int(td/ts_tph))
 press_rolling_mean = rolling(mean,df_tph.pressure,Int(td/ts_tph))
 hum_rolling_mean = rolling(mean,df_tph.humidity,Int(td/ts_tph))
-ts_tph = collect(data_frame.dateTime[1]+Minute(15):Second(ts_tph):data_frame.dateTime[length(data_frame.dateTime)])
+timestamp_tph = collect(DateTime(2022,10,01)+Minute(15):Second(ts_tph):DateTime(2022,10,08))
 
 
-df_wind_avg = DataFrame(TimeStamp = ts_wind,
+df_wind_avg = DataFrame(TimeStamp = timestamp_wind,
                         MeanWindSpeed = ws_rolling_mean[1:length(ws_rolling_mean)-1],
                         MeanWindDirection = wd_rolling_mean[1:length(ws_rolling_mean)-1])
 
 
-df_tph_avg = DataFrame(TimeStamp = ts_tph,
+df_tph_avg = DataFrame(TimeStamp = timestamp_tph,
                        MeanTemperature = temp_rolling_mean[1:length(temp_rolling_mean)-1],
                        MeanPressure = press_rolling_mean[1:length(press_rolling_mean)-1],
                        MeanHumidity = hum_rolling_mean[1:length(hum_rolling_mean)-1])
@@ -132,7 +139,7 @@ df_var_pm2_5 = outerjoin(pm2_5_rolling_variogram,df_wind_avg,df_tph_avg,on = :Ti
 df_var_pm5_0 = outerjoin(pm5_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
 df_var_pm10_0 = outerjoin(pm10_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
 
-dict_pm_variogram = Dict("pc0.1"=>df_var_pc0_1,"pc0.3"=>df_var_pc0_3,"pc0.5"=>df_var_pc0_5,
+dict_pm_variogram = OrderedDict("pc0.1"=>df_var_pc0_1,"pc0.3"=>df_var_pc0_3,"pc0.5"=>df_var_pc0_5,
                          "pc1.0"=>df_var_pc1_0,"pc2.5"=>df_var_pc2_5,"pc5.0"=>df_var_pc5_0,
                          "pc10.0"=>df_var_pc10_0,
                          "pm0.1"=>df_var_pm0_1,"pm0.3"=>df_var_pm0_3,"pm0.5"=>df_var_pm0_5,
@@ -152,14 +159,6 @@ for (key,value) in dict_pm_variogram
     dict_plot_wind[key] = select!(dict_plot_wind[key], Not([:MeanTemperature, :MeanPressure, :MeanHumidity]))
     dict_plot_tph[key] = dropmissing(dict_var_updated[key], [:MeanTemperature,:MeanPressure,:MeanHumidity])
     append!(clim_vals,dict_plot_tph[key][!,key*"_Range"])
-
-
-    # mapcols(dict_plot_wind[key]) do col
-    #     eltype(col) === Any ? Float64.(col) : col
-    # end
-        # mapcols(dict_plot_tph[key]) do col
-    #     eltype(col) === Any ? Float64.(col) : col
-    # end
 end
 path_to_dir = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\Parameters\\"
 for i in 1:1:length(yearmonthday(df_var_pm0_1.TimeStamp[1]))
@@ -191,23 +190,33 @@ end
 #Try this up there before deleting missing values
 
 dateTime = dict_var_updated["pm0.1"][:,1]
+Range = DataFrame()
+Sill = DataFrame()
+Nugget = DataFrame()
+
+#Range[!,"pm0.1"] = dict_var_updated["pm0.1"][:,2]
 for (key,value) in dict_var_updated
-    Range[key] = dict_var_updated[key][:,2]
-    Sill[key] = dict_var_updated[key][:,3]
-    Nugget[key] = dict_var_updated[key][:,4]
     CSV.write(path_to_var_csv*key*"_"*"Variogram_Parameters.csv",string.(dict_var_updated[key]))
     CSV.write(path_to_var_csv*key*"_"*"Variogram_Wind_Plots.csv",string.(dict_plot_wind[key]))
     CSV.write(path_to_var_csv*key*"_"*"Variogram_TPH_Plots.csv",string.(dict_plot_tph[key]))
 end
 
 
-findall( x -> occursin("Range", x),names(dict_pm_variogram["pm0.1"]))
+# findall( x -> occursin("Range", x),names(dict_pm_variogram["pm0.1"]))
 
 
 clim_low = round(percentile(clim_vals,1 ); digits = 2)
 clim_high = round(percentile(clim_vals,99 ); digits = 2)
 
-strpm0_1 = "PM"*latexstring("_{0.1}")
+
+strpc0_1 = "Particle Count for "*"PM"*latexstring("_{0.1}")
+strpc0_3 = "Particle Count for "*"PM"*latexstring(" _{0.3}")
+strpc0_5 = "Particle Count for "*"PM"*latexstring("_{0.5}")
+strpc1_0 = "Particle Count for "*"PM"*latexstring("_{1.0}")
+strpc2_5 = "Particle Count for "*"PM"*latexstring("_{2.5}")
+strpc5_0 = "Particle Count for "*"PM"*latexstring("_{5.0}")
+strpc10_0 = "Particle Count for "*"PM"*latexstring("_{10.0}")
+strpc0_1 = "PM"*latexstring("_{0.1}")
 strpm0_3 = "PM"*latexstring(" _{0.3}")
 strpm0_5 = "PM"*latexstring("_{0.5}")
 strpm1_0 = "PM"*latexstring("_{1.0}")
@@ -215,32 +224,43 @@ strpm2_5 = "PM"*latexstring("_{2.5}")
 strpm5_0 = "PM"*latexstring("_{5.0}")
 strpm10_0 = "PM"*latexstring("_{10.0}")
 degree = L"$^{\circ}$"
-dict = Dict("pm0.1"=>strpm0_1, "pm0.3"=>strpm0_3, "pm0.5"=>strpm0_5,"pm1.0"=>strpm1_0,"pm2.5"=>strpm2_5,"pm5.0"=>strpm5_0,"pm10.0"=>strpm10_0,)
+dict_plot = OrderedDict("pc0.1"=>strpm0_1, "pc0.3"=>strpm0_3, "pc0.5"=>strpm0_5,"pc1.0"=>strpm1_0,"pc2.5"=>strpm2_5,"pc5.0"=>strpm5_0,"pc10.0"=>strpm10_0,
+            "pm0.1"=>strpm0_1, "pm0.3"=>strpm0_3, "pm0.5"=>strpm0_5,"pm1.0"=>strpm1_0,"pm2.5"=>strpm2_5,"pm5.0"=>strpm5_0,"pm10.0"=>strpm10_0,)
 
 gr()
-for (key,value) in dict
+jet_r = reverse(cgrad(:jet))
+
+for (key,value) in dict_plot
     if !(isdir(path_to_var_tph_plots*"//"*key))    
         mkdir(path_to_var_tph_plots*"//"*key)
     end    
     
     Plots.scatter(Array(dict_plot_tph[key].MeanTemperature), Array(dict_plot_tph[key].MeanHumidity), zcolor=  Array(dict_plot_tph[key][!,key*"_Range"]),
-    color=palette(:jet,length(unique(dict_plot_tph[key][!,key*"_Range"])),rev = true),xlabel ="Temperature("*degree*"C)" 
-    ,ylabel= "Humidity (% r.H)",label = dict[key]*" Range",legend=:topright,markerstrokewidth=0,clims=(clim_low,clim_high),title=Date(df_var_pm0_1.TimeStamp[1]))
-    
+    color = jet_r , xlabel ="Temperature("*degree*"C)",ylabel= "Humidity (% r.H)",label = dict_plot[key]*" Range",legend=:topright,markerstrokewidth=0,
+    clims=(clim_low,clim_high),title= string(Date(df_var_pm0_1.TimeStamp[1]))* " - " *string(Date(df_var_pm0_1.TimeStamp[end])))
 
     png(path_to_var_tph_plots*"//"*key*"//"*"TH")
 
     Plots.scatter(Array(dict_plot_tph[key].MeanPressure), Array(dict_plot_tph[key].MeanHumidity), zcolor= Array(dict_plot_tph[key][!,key*"_Range"]),
-    color=palette(:jet,length(unique(Array(dict_plot_tph[key][!,key*"_Range"]))),rev = true),xlabel ="Pressure(hPa)" 
-    ,ylabel= "Humidity (% r.H)",label = dict[key]*" Range",legend=:topleft,markerstrokewidth=0,clims=(clim_low,clim_high),title=Date(df_var_pm0_1.TimeStamp[1]))
+    color = jet_r ,xlabel ="Pressure(hPa)",ylabel= "Humidity (% r.H)",label = dict_plot[key]*" Range",legend=:topleft,markerstrokewidth=0,
+    clims=(clim_low,clim_high),title= string(Date(df_var_pm0_1.TimeStamp[1]))* " - " *string(Date(df_var_pm0_1.TimeStamp[end])))
 
     png(path_to_var_tph_plots*"//"*key*"//"*"PH")
 
     Plots.scatter(Array(dict_plot_tph[key].MeanPressure), Array(dict_plot_tph[key].MeanTemperature), zcolor= Array(dict_plot_tph[key][!,key*"_Range"]),
-    color=palette(:jet,length(unique(Array(dict_plot_tph[key][!,key*"_Range"]))),rev = true),xlabel ="Pressure(hPa)" 
-    ,ylabel= "Temperature("*degree*"C)",label = dict[key]*" Range",legend=:bottomleft,markerstrokewidth=0,clims=(clim_low,clim_high),title=Date(df_var_pm0_1.TimeStamp[1]))
+    color = jet_r , xlabel ="Pressure(hPa)",ylabel= "Temperature("*degree*"C)",label = dict_plot[key]*" Range",legend=:bottomleft,markerstrokewidth=0,
+    clims=(clim_low,clim_high),title= string(Date(df_var_pm0_1.TimeStamp[1]))* " - " *string(Date(df_var_pm0_1.TimeStamp[end])))
 
     png(path_to_var_tph_plots*"//"*key*"//"*"PT")
 end
+data_frame = DataFrames.rename!(data_frame,["dateTime" ; collect(keys(dict_plot))])
+data_frame_pm_tph = outerjoin(data_frame,df_tph ,on = :dateTime)
+data_frame_pm_tph = data_frame_pm_tph[completecases(data_frame_pm_tph), :]
+Plots.scatter(Array(data_frame_pm_tph.temperature), Array(data_frame_pm_tph.humidity), zcolor=  data_frame_pm_tph[!,"pm0.1"] ,
+color = :jet , xlabel ="Temperature("*degree*"C)",ylabel= "Humidity (% r.H)",label = dict_plot["pm0.1"],legend=:topright,markerstrokewidth=0,
+title= string(Date(df_var_pm0_1.TimeStamp[1]))* " - " *string(Date(df_var_pm0_1.TimeStamp[end])),colorbar_title = "trial")
 
-
+# using Plots
+# jet_r = reverse(cgrad(:jet))
+# x = range(0,stop=2pi,length=50)
+# plot(x,x.+1,color=jet_r,line_z=x)

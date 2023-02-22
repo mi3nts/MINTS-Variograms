@@ -1,32 +1,42 @@
+# Activating the variogram enviornmment
 using Pkg
 Pkg.activate("D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\LoRa")
+
+#Including the wind data after analysis nad also the files search script 
 include("CentralNodeGunter_Wind_TPH.jl")
+
+# Loading the packages
 using DelimitedFiles,CSV,DataFrames,Dates,Statistics,DataStructures,Plots,TimeSeries,Impute,LaTeXStrings
 using StatsBase, Statistics,Polynomials,Peaks,RollingFunctions,Parsers
 
+# Write a function for this part taking in the start date and end date for which the files have to be combined or do aquery from the database
+#--------------------------------- Start here------------------------------#
+# Creating a list of PM dataframe by reading in filenames for each day
 df_pm_list = []
 for i in 1:1:7
     push!(df_pm_list, CSV.read(df_csv.IPS7100[i],DataFrame))
 end
+# Combining all the dataframes into a single dataframe
 data_frame_pm_combined = reduce(vcat,df_pm_list)
+#--------------------------------- End here------------------------------#
 
 
 
-
-
+# Function for cleaning the data
 function data_cleaning( data_frame)
-    ms = [parse(Float64,x[20:26]) for x in data_frame[!,:dateTime]]
-    data_frame.ms  = Second.(round.(Int,ms))
+    ms = [parse(Float64,x[20:26]) for x in data_frame[!,:dateTime]] # Taking in string datetime's millisecond part
+    data_frame.ms  = Second.(round.(Int,ms)) # Rounding it to the nearest millisecond and converting it to seconds
     data_frame.dateTime = [x[1:19] for x in data_frame[!,:dateTime]]
-    data_frame.dateTime = DateTime.(data_frame.dateTime,"yyyy-mm-dd HH:MM:SS")
-    data_frame.dateTime = data_frame.dateTime + data_frame.ms
-    data_frame = select!(data_frame, Not(:ms))
-    col_symbols = Symbol.(names(data_frame))
-    data_frame = DataFrames.combine(DataFrames.groupby(data_frame, :dateTime), col_symbols[2:end] .=> mean)
-    return data_frame,col_symbols
+    data_frame.dateTime = DateTime.(data_frame.dateTime,"yyyy-mm-dd HH:MM:SS") # Converting the dateime columns[1:19] to DateTime format in Julia
+    data_frame.dateTime = data_frame.dateTime + data_frame.ms # Adding the converted date time to the millisecond that was rounded to seconds
+    data_frame = select!(data_frame, Not(:ms)) # Deleting the ms column
+    col_symbols = Symbol.(names(data_frame)) # Column symbols are saved to a variable(Names and Symbols are similar both are for obtaining the column names)
+    data_frame = DataFrames.combine(DataFrames.groupby(data_frame, :dateTime), col_symbols[2:end] .=> mean) # taking the mean of all columns as there may be 
+    # columns with the same datetime.   
+    return data_frame,col_symbols # returns the dataframe and column symbols
 end
 
-data_frame,col_symbols = data_cleaning(data_frame_pm_combined)
+data_frame,col_symbols = data_cleaning(data_frame_pm_combined)# Obtained the cleaned dataframe and column names
 
 function rolling_variogram(data_frame,col) 
     df = DataFrame()

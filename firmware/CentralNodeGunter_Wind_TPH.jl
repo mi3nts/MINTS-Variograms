@@ -7,8 +7,8 @@ include("File_Search_trial.jl")
 df_wind_list = []
 df_tph_list = []
 for i in 1:1:7
-    push!(df_wind_list, CSV.read(df_csv.WIMDA[i],DataFrame))
-    push!(df_tph_list, CSV.read(df_csv.BME680[i],DataFrame))
+    push!(df_wind_list, CSV.read(df_wind_csv.WIMDA[i],DataFrame))
+    push!(df_tph_list, CSV.read(df_tph_csv.BME680[i],DataFrame))
 end
 data_frame_wind_combined = reduce(vcat,df_wind_list)
 data_frame_tph_combined = reduce(vcat,df_tph_list)

@@ -1,8 +1,9 @@
 # Activating the variogram enviornmment
 using Pkg
-Pkg.activate("D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\LoRa")
+Pkg.activate("LoRa")
 
 #Including the wind data after analysis nad also the files search script 
+#include("File_Search_trial.jl")
 include("CentralNodeGunter_Wind_TPH.jl")
 
 # Loading the packages
@@ -14,7 +15,7 @@ using StatsBase, Statistics,Polynomials,Peaks,RollingFunctions,Parsers
 # Creating a list of PM dataframe by reading in filenames for each day
 df_pm_list = []
 for i in 1:1:7
-    push!(df_pm_list, CSV.read(df_csv.IPS7100[i],DataFrame))
+    push!(df_pm_list, CSV.read(df_pm_csv.IPS7100[i],DataFrame))
 end
 # Combining all the dataframes into a single dataframe
 data_frame_pm_combined = reduce(vcat,df_pm_list)
@@ -36,12 +37,20 @@ function data_cleaning( data_frame)
     return data_frame,col_symbols # returns the dataframe and column symbols
 end
 
-data_frame,col_symbols = data_cleaning(data_frame_pm_combined)# Obtained the cleaned dataframe and column names
+data_frame_pm,col_symbols = data_cleaning(data_frame_pm_combined)# Obtained the cleaned dataframe and column names
+
+df_range = DataFrame()
+df_sill = DataFrame()
+df_nugget = DataFrame()
 
 function rolling_variogram(data_frame,col) 
     df = DataFrame()
-    df.dateTime = collect(DateTime(2022,10,01):Second(1):DateTime(2022,10,08)-Second(1))
+    df.dateTime = collect(data_frame.dateTime[1]:Second(1):data_frame.dateTime[end])
+    println(length(df.dateTime)-900 +1)
     df = outerjoin( df,data_frame, on = :dateTime)[1:length(df.dateTime),:]
+ #=========================================================================================#   
+    #df = outerjoin( df,data_frame, on = :dateTime)[1:2000,:] # repalce this with the above statement
+ #=========================================================================================#   
     sort!(df, (:dateTime))
     df = DataFrames.rename!(df, col_symbols)
     df = Impute.locf(df)|>Impute.nocb()
@@ -83,30 +92,48 @@ function rolling_variogram(data_frame,col)
         x=[]
     end
 
-    ts = collect(DateTime(2022,10,01)+Minute(15):Second(1):DateTime(2022,10,08))
-    dict_pm = Dict(1=>"pc0.1",2=>"pc0.3",3=>"pc0.5",4=>"pc1.0",5=>"pc2.5",6=>"pc5.0",7=>"pc10.0",
-                   8=>"pm0.1",9=>"pm0.3",10=>"pm0.5",11=>"pm1.0",12=>"pm2.5",13=>"pm5.0",14=>"pm10.0")
 
-    df_parameters = DataFrame("TimeStamp"=>ts,dict_pm[col]*"_"*"Range" => range_vec[1:length(ts)] ,dict_pm[col]*"_"*"Sill" => sill_vec[1:length(ts)], dict_pm[col]*"_"*"Nugget" => nugget_vec[1:length(ts)] )
+
+
+    #df_parameters = DataFrame("TimeStamp"=>ts,dict_pm[col]*"_"*"Range" => range_vec[1:length(ts)] ,dict_pm[col]*"_"*"Sill" => sill_vec[1:length(ts)], dict_pm[col]*"_"*"Nugget" => nugget_vec[1:length(ts)] )
     
     # insert!(df_parameters,1,ts,:TimeStamp) 
     
-    return df_parameters
-end   
-pc0_1_rolling_variogram = rolling_variogram(data_frame,1)
-pc0_3_rolling_variogram = rolling_variogram(data_frame,2)
-pc0_5_rolling_variogram = rolling_variogram(data_frame,3)
-pc1_0_rolling_variogram = rolling_variogram(data_frame,4)
-pc2_5_rolling_variogram = rolling_variogram(data_frame,5)
-pc5_0_rolling_variogram = rolling_variogram(data_frame,6)
-pc10_0_rolling_variogram = rolling_variogram(data_frame,7)
-pm0_1_rolling_variogram = rolling_variogram(data_frame,8)
-pm0_3_rolling_variogram = rolling_variogram(data_frame,9)
-pm0_5_rolling_variogram = rolling_variogram(data_frame,10)
-pm1_0_rolling_variogram = rolling_variogram(data_frame,11)
-pm2_5_rolling_variogram = rolling_variogram(data_frame,12)
-pm5_0_rolling_variogram = rolling_variogram(data_frame,13)
-pm10_0_rolling_variogram = rolling_variogram(data_frame,14)
+    return range_vec,sill_vec,nugget_vec
+end
+# created the rolling time window
+ts = collect(data_frame_pm.dateTime[1]+Minute(15):Second(1):data_frame_pm.dateTime[end] + Second(1))
+# Created dataframes for range , sill and nugget values with the 15 minute rolling date time window
+df_range.RollingTime = ts
+df_sill.RollingTime = ts
+df_nugget.RollingTime = ts
+
+dict_pm = Dict(1=>"pc0.1",2=>"pc0.3",3=>"pc0.5",4=>"pc1.0",5=>"pc2.5",6=>"pc5.0",7=>"pc10.0",
+               8=>"pm0.1",9=>"pm0.3",10=>"pm0.5",11=>"pm1.0",12=>"pm2.5",13=>"pm5.0",14=>"pm10.0")
+
+# Appending Range, Sill and Nugget values for each PC, PM column 
+for i in 1:1:14
+    println(i)
+    df_range[!,dict_pm[i]] = rolling_variogram(data_frame_pm,i)[1]
+    df_sill[!,dict_pm[i]] = rolling_variogram(data_frame_pm,i)[2]
+    df_nugget[!,dict_pm[i]] = rolling_variogram(data_frame_pm,i)[3]
+end
+
+
+# pc0_1_rolling_variogram = rolling_variogram(data_frame,1)
+# pc0_3_rolling_variogram = rolling_variogram(data_frame,2)
+# pc0_5_rolling_variogram = rolling_variogram(data_frame,3)
+# pc1_0_rolling_variogram = rolling_variogram(data_frame,4)
+# pc2_5_rolling_variogram = rolling_variogram(data_frame,5)
+# pc5_0_rolling_variogram = rolling_variogram(data_frame,6)
+# pc10_0_rolling_variogram = rolling_variogram(data_frame,7)
+# pm0_1_rolling_variogram = rolling_variogram(data_frame,8)
+# pm0_3_rolling_variogram = rolling_variogram(data_frame,9)
+# pm0_5_rolling_variogram = rolling_variogram(data_frame,10)
+# pm1_0_rolling_variogram = rolling_variogram(data_frame,11)
+# pm2_5_rolling_variogram = rolling_variogram(data_frame,12)
+# pm5_0_rolling_variogram = rolling_variogram(data_frame,13)
+# pm10_0_rolling_variogram = rolling_variogram(data_frame,14)
 
 
 
@@ -115,87 +142,131 @@ ts_wind = 2
 ts_tph = 10
 wd_rolling_mean = RollingFunctions.rolling(mean,df_wind.windDirectionTrue,Int(td/ts_wind))
 ws_rolling_mean = RollingFunctions.rolling(mean,df_wind.windSpeedMetersPerSecond,Int(td/ts_wind))
-timestamp_wind = collect(DateTime(2022,10,01)+Minute(15):Second(ts_wind):data_frame.dateTime[length(data_frame.dateTime)])
+rolling_time_wind = collect(df_wind.dateTime[1]+Minute(15):Second(ts_wind):df_wind.dateTime[end]+Second(ts_wind))
 
 temp_rolling_mean = rolling(mean,df_tph.temperature,Int(td/ts_tph))
 press_rolling_mean = rolling(mean,df_tph.pressure,Int(td/ts_tph))
 hum_rolling_mean = rolling(mean,df_tph.humidity,Int(td/ts_tph))
-timestamp_tph = collect(DateTime(2022,10,01)+Minute(15):Second(ts_tph):DateTime(2022,10,08))
+rolling_time_tph = collect(df_tph.dateTime[1]+Minute(15):Second(ts_tph):df_tph.dateTime[end]+Second(ts_tph))
 
 
-df_wind_avg = DataFrame(TimeStamp = timestamp_wind,
-                        MeanWindSpeed = ws_rolling_mean[1:length(ws_rolling_mean)-1],
-                        MeanWindDirection = wd_rolling_mean[1:length(ws_rolling_mean)-1])
+df_wind_avg = DataFrame(RollingTime = rolling_time_wind,
+                        MeanWindSpeed = ws_rolling_mean,
+                        MeanWindDirection = wd_rolling_mean)
 
 
-df_tph_avg = DataFrame(TimeStamp = timestamp_tph,
-                       MeanTemperature = temp_rolling_mean[1:length(temp_rolling_mean)-1],
-                       MeanPressure = press_rolling_mean[1:length(press_rolling_mean)-1],
-                       MeanHumidity = hum_rolling_mean[1:length(hum_rolling_mean)-1])
+df_tph_avg = DataFrame(RollingTime = rolling_time_tph,
+                       MeanTemperature = temp_rolling_mean,
+                       MeanPressure = press_rolling_mean,
+                       MeanHumidity = hum_rolling_mean)
 
-df_var_pc0_1 = outerjoin(pc0_1_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-df_var_pc0_3 = outerjoin(pc0_3_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-df_var_pc0_5 = outerjoin(pc0_5_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-df_var_pc1_0 = outerjoin(pc1_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-df_var_pc2_5 = outerjoin(pc2_5_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-df_var_pc5_0 = outerjoin(pc5_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-df_var_pc10_0 = outerjoin(pc10_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-
-df_var_pm0_1 = outerjoin(pm0_1_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-df_var_pm0_3 = outerjoin(pm0_3_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-df_var_pm0_5 = outerjoin(pm0_5_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-df_var_pm1_0 = outerjoin(pm1_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-df_var_pm2_5 = outerjoin(pm2_5_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-df_var_pm5_0 = outerjoin(pm5_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-df_var_pm10_0 = outerjoin(pm10_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
-
-dict_pm_variogram = OrderedDict("pc0.1"=>df_var_pc0_1,"pc0.3"=>df_var_pc0_3,"pc0.5"=>df_var_pc0_5,
-                         "pc1.0"=>df_var_pc1_0,"pc2.5"=>df_var_pc2_5,"pc5.0"=>df_var_pc5_0,
-                         "pc10.0"=>df_var_pc10_0,
-                         "pm0.1"=>df_var_pm0_1,"pm0.3"=>df_var_pm0_3,"pm0.5"=>df_var_pm0_5,
-                         "pm1.0"=>df_var_pm1_0,"pm2.5"=>df_var_pm2_5,"pm5.0"=>df_var_pm5_0,
-                         "pm10.0"=>df_var_pm10_0)
+df_range_wind_tph_var = leftjoin(leftjoin(df_range,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime)
+df_sill_wind_tph_var = leftjoin(leftjoin(df_sill,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime)
+df_nugget_wind_tph_var = leftjoin(leftjoin(df_nugget,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime)
 
 
 
-dict_var_updated = Dict()
-dict_plot_wind = Dict()
-dict_plot_tph = Dict()
+csv_path_list = []
+wind_path_list = []
+tph_path_list = []
 
-clim_vals = []
-for (key,value) in dict_pm_variogram
-    dict_var_updated[key] = dropmissing(dict_pm_variogram[key], [Symbol.(key*"_Range")])    
-    dict_plot_wind[key] = dropmissing(dict_var_updated[key], [:MeanWindSpeed,:MeanWindDirection])
-    dict_plot_wind[key] = select!(dict_plot_wind[key], Not([:MeanTemperature, :MeanPressure, :MeanHumidity]))
-    dict_plot_tph[key] = dropmissing(dict_var_updated[key], [:MeanTemperature,:MeanPressure,:MeanHumidity])
-    append!(clim_vals,dict_plot_tph[key][!,key*"_Range"])
-end
-path_to_dir = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\Parameters\\"
-for i in 1:1:length(yearmonthday(df_var_pm0_1.TimeStamp[1]))
-    if !(isdir(path_to_dir*"\\"*string(yearmonthday(df_var_pm0_1.TimeStamp[1])[i])))
-        path_to_dir = path_to_dir*"\\"*string(yearmonthday(df_var_pm0_1.TimeStamp[1])[i])
-        mkdir(path_to_dir) 
-    else
-        path_to_dir = path_to_dir*"\\"*string(yearmonthday(df_var_pm0_1.TimeStamp[1])[i])
+# Creating path for the each plot and csv file based on the date
+unique_date_values = unique(yearmonthday.(data_frame_pm.dateTime))
+
+for j in 1:1:length(unique_date_values)
+    path_to_dir = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters"
+    for i in 1:1:length(unique_date_values[j])
+        print(j)
+        
+        if !(isdir(path_to_dir*"/"*string(unique_date_values[j][i])))
+            path_to_dir = path_to_dir*"/"*string(unique_date_values[j][i])
+            mkdir(path_to_dir) 
+        else
+            path_to_dir = path_to_dir*"/"*string(unique_date_values[j][i])
+        end
+        println(i)
+        println(path_to_dir)
     end
-    println(i)
-    println(path_to_dir)
+    path_to_var_csv = path_to_dir*"/csv/"
+    push!(csv_path_list,path_to_var_csv)
+    if !(isdir(path_to_var_csv))    
+        mkdir(path_to_var_csv)
+    end 
+
+    path_to_var_tph_plots = path_to_dir*"/tph_plots/"
+    push!(tph_path_list,path_to_var_tph_plots)
+    if !(isdir(path_to_var_tph_plots))    
+        mkdir(path_to_var_tph_plots)
+    end    
+
+    path_to_var_wind_plots = path_to_dir*"/wind_plots/"
+    push!(wind_path_list,path_to_var_wind_plots)
+    if !(isdir(path_to_var_wind_plots))    
+        mkdir(path_to_var_wind_plots)
+    end  
 end
 
-path_to_var_csv = path_to_dir*"\\csv\\"
-if !(isdir(path_to_var_csv))    
-    mkdir(path_to_var_csv)
-end 
+for i in csv_path_list
+    println(i)
+    date_limit = DateTime(replace(SubString(i,31,38),"/"=>"-"))#Replace this with regular expressions
+    CSV.write(i*"Range.csv",df_range_wind_tph_var[(df_range[!,"RollingTime"].>=date_limit) .& (df_range_wind_tph_var[!,"RollingTime"] .< date_limit+Second(86400)),:])
+    CSV.write(i*"Sill.csv",df_sill_wind_tph_var[(df_sill[!,"RollingTime"].>=date_limit) .& (df_sill_wind_tph_var[!,"RollingTime"] .< date_limit+Second(86400)),:])
+    CSV.write(i*"Nugget.csv",df_nugget_wind_tph_var[(df_nugget[!,"RollingTime"].>=date_limit) .& (df_nugget_wind_tph_var[!,"RollingTime"] .< date_limit+Second(86400)),:])
+end
 
-path_to_var_tph_plots = path_to_dir*"\\tph_plots\\"
-if !(isdir(path_to_var_tph_plots))    
-    mkdir(path_to_var_tph_plots)
-end    
+clim_vals_pc  = []
+clim_vals_pm  = []
+for i in 2:8
+    append!(clim_vals_pc,df_range[:,i]) 
+end
 
-path_to_var_wind_plots = path_to_dir*"\\wind_plots\\"
-if !(isdir(path_to_var_wind_plots))    
-    mkdir(path_to_var_wind_plots)
-end    
+for i in 9:15
+    append!(clim_vals_pm,df_range[:,i]) 
+end
+
+############################################################ Fixed Till here #######################################################################################
+
+
+
+# df_var_pc0_3 = outerjoin(pc0_3_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
+# df_var_pc0_5 = outerjoin(pc0_5_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
+# df_var_pc1_0 = outerjoin(pc1_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
+# df_var_pc2_5 = outerjoin(pc2_5_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
+# df_var_pc5_0 = outerjoin(pc5_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
+# df_var_pc10_0 = outerjoin(pc10_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
+
+# df_var_pm0_1 = outerjoin(pm0_1_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
+# df_var_pm0_3 = outerjoin(pm0_3_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
+# df_var_pm0_5 = outerjoin(pm0_5_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
+# df_var_pm1_0 = outerjoin(pm1_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
+# df_var_pm2_5 = outerjoin(pm2_5_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
+# df_var_pm5_0 = outerjoin(pm5_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
+# df_var_pm10_0 = outerjoin(pm10_0_rolling_variogram,df_wind_avg,df_tph_avg,on = :TimeStamp)
+
+# dict_pm_variogram = OrderedDict("pc0.1"=>df_var_pc0_1,"pc0.3"=>df_var_pc0_3,"pc0.5"=>df_var_pc0_5,
+#                          "pc1.0"=>df_var_pc1_0,"pc2.5"=>df_var_pc2_5,"pc5.0"=>df_var_pc5_0,
+#                          "pc10.0"=>df_var_pc10_0,
+#                          "pm0.1"=>df_var_pm0_1,"pm0.3"=>df_var_pm0_3,"pm0.5"=>df_var_pm0_5,
+#                          "pm1.0"=>df_var_pm1_0,"pm2.5"=>df_var_pm2_5,"pm5.0"=>df_var_pm5_0,
+#                          "pm10.0"=>df_var_pm10_0)
+
+
+
+# dict_var_updated = Dict()
+# dict_plot_wind = Dict()
+# dict_plot_tph = Dict()
+
+
+# for (key,value) in dict_pm_variogram
+#     dict_var_updated[key] = dropmissing(dict_pm_variogram[key], [Symbol.(key*"_Range")])    
+#     dict_plot_wind[key] = dropmissing(dict_var_updated[key], [:MeanWindSpeed,:MeanWindDirection])
+#     dict_plot_wind[key] = select!(dict_plot_wind[key], Not([:MeanTemperature, :MeanPressure, :MeanHumidity]))
+#     dict_plot_tph[key] = dropmissing(dict_var_updated[key], [:MeanTemperature,:MeanPressure,:MeanHumidity])
+#     append!(clim_vals,dict_plot_tph[key][!,key*"_Range"])
+# end
+
+
+  
 
 #Try this up there before deleting missing values
 

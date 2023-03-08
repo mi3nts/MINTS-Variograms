@@ -1,5 +1,6 @@
+
 using Pkg
-Pkg.activate("D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\LoRa")
+Pkg.activate("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/LoRa")
 using DelimitedFiles,CSV,DataFrames,Dates,Statistics,DataStructures,Plots,TimeSeries,Impute,LaTeXStrings
 using StatsBase, Statistics,Polynomials,Peaks,RollingFunctions
 include("File_Search_trial.jl")
@@ -13,9 +14,6 @@ end
 data_frame_wind_combined = reduce(vcat,df_wind_list)
 data_frame_tph_combined = reduce(vcat,df_tph_list)
 
-#path_to_airmar_data = df_csv.WIMDA#"D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e0642ff0f\\2022\\10\\05\\MINTS_001e0642ff0f_WIMDA_2022_10_05.csv"
-#path_to_bme_680_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e063739c7\\2022\\10\\05\\MINTS_001e063739c7_BME680_2022_10_05.csv"
-#path_to_scd_30_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e063739c7\\2022\\10\\05\\MINTS_001e063739c7_SCD30_2022_10_05.csv"
 
 
 function data_cleaning( data_frame,sensor_type) 
@@ -76,7 +74,7 @@ function dataframe_updates(data_frame,cols,sensor_type)
 
     ################### Some issue with imputation logic, need to fix it ###################### Believe its fixed
     df = DataFrame()
-    df.dateTime = collect(DateTime(2022,10,01):Second(time_to_round):DateTime(2022,10,08)-Second(1))
+    df.dateTime = collect(DateTime(2023,01,01):Second(time_to_round):DateTime(2023,01,08)-Second(1))
     df = outerjoin( df,data_frame, on = :dateTime)
     sort!(df, (:dateTime))
     println(cols)

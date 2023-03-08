@@ -13,7 +13,7 @@ function list_csv(path_to_data,sensor_name)
     for i in 1:1:length(fulldirpaths_month)
         append!(fulldirpaths_days, (filter(isdir,readdir(fulldirpaths_month[i],join=true))))
     end
-    append!(date_str,last.(fulldirpaths_days,10))# Appending the date string in yyyy\\nn\\dd format
+    append!(date_str,last.(fulldirpaths_days,10))# Appending the date string in yyyy\\mm\\dd format
 
     date_str = replace.(date_str, "\\" => "-",count=3)
     csv_date = Date.(date_str, "yyyy-mm-dd")# Converted date string tto date time format
@@ -22,7 +22,6 @@ function list_csv(path_to_data,sensor_name)
 
     list_csv_path = readdir.(fulldirpaths_days; join=true) # find the list of files in each day folder
     index_sensor = []
-
     #This loop helps in finding the missing sensor path
     for i in list_csv_path
        if (1 in Int.(occursin.(sensor_name,i)))
@@ -49,9 +48,9 @@ function list_csv(path_to_data,sensor_name)
 end
 
 # path to all csv files for gunter Central node
-path_to_pm_data = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/001e063739c7/" 
-path_to_wind_data = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/001e0642ff0f/"
-path_to_tph_data = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/001e063739c7/"
+path_to_pm_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e0636e547\\" 
+path_to_wind_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e06430225\\"
+path_to_tph_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e0636e547\\"
 df_pm_csv = list_csv(path_to_pm_data,"IPS7100")
 df_wind_csv  = list_csv(path_to_wind_data,"WIMDA")
 df_tph_csv = list_csv(path_to_tph_data,"BME680")

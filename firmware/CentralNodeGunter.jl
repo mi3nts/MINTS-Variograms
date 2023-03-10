@@ -301,19 +301,26 @@ end
 pc_tph_plots = tph_plots(tph_path_list,vec_df_range,dict_plot_pc,clim_vals_pc,jet_r,degree)
 pm_tph_plots = tph_plots(tph_path_list,vec_df_range,dict_plot_pm,clim_vals_pm,jet_r,degree)
 
+data_frame_pm_updated.date = Date.(data_frame_pm_updated.dateTime)
+df_pm_updated_groupedby_dates = groupby(data_frame_pm_updated, :date)
+vec_df_pm_updated = []
+for i in unique(data_frame_pm_updated.date)
+    push!(vec_df_pm_updated,DataFrame(df_pm_updated_groupedby_dates[Dict(:date => i)]))
+end
+
+
+
+
 data_frame_pm_updated_rolling_mean = DataFrame()
 data_frame_pm_updated_rolling_mean.RollingTime = ts
 for i in names(data_frame_pm_updated)[2:end]
     data_frame_pm_updated_rolling_mean[!,i] = RollingFunctions.rolling(mean,data_frame_pm_updated[!,i],Int(900))
 end
 
+data_frame_pm_updated = DataFrames.rename!(data_frame_pm_updated, ["dateTime";names(df_range)[2:end-1]]) 
+
+
 data_frame_pm_updated_rolling_mean = DataFrames.rename!(data_frame_pm_updated_rolling_mean, ["RollingTime";names(df_range)[2:end-1]]) 
-
-
-
-
-
-
 data_frame_pm_updated_rolling_mean.date = Date.(data_frame_pm_updated_rolling_mean.RollingTime)
 df_pm_groupedby_dates = groupby(data_frame_pm_updated_rolling_mean, :date)
 vec_df_pm = []
@@ -333,31 +340,32 @@ gr()
 tm_ticks = range(Time(vec_df_pm[3].RollingTime[1]),Time(vec_df_pm[3].RollingTime[end]),step =Hour(3))
 tm = string.(collect(tm_ticks))
 
-Plots.scatter(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm0.1"], xlabel = "Date Time ",
+
+Plots.scatter(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm0.1"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm0.1"], 
-     legend = :right, legendfontsize=10, xrotation = 30,title = "2023-01-03")
-Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm0.3"], xlabel = "Date Time ",
-     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm0.3"], 
+     ylabel = "PM concentrations"*pm_unit, label = dict_plot_pm["pm0.1"], 
      legend = :right, legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm0.5"], xlabel = "Date Time ",
+Plots.scatter!(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm0.3"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm0.5"], 
+     ylabel = "PM concentrations"*pm_unit, label = dict_plot_pm["pm0.3"], 
      legend = :right, legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm1.0"], xlabel = "Date Time ",
+Plots.scatter!(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm0.5"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm1.0"], 
+     ylabel = "PM concentrations"*pm_unit, label = dict_plot_pm["pm0.5"], 
      legend = :right, legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm2.5"], xlabel = "Date Time ",
+Plots.scatter!(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm1.0"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm1.0"], 
+     ylabel = "PM concentrations"*pm_unit, label = dict_plot_pm["pm1.0"], 
+     legend = :right, legendfontsize=10, xrotation = 30)
+Plots.scatter!(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm2.5"], xlabel = "2023-01-03",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations"*pm_unit, label = dict_plot_pm["pm1.0"], 
      legend = :right,  legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm5.0"], xlabel = "Date Time ",
+Plots.scatter!(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm5.0"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm5.0"], 
+     ylabel = "PM concentrations"*pm_unit, label = dict_plot_pm["pm5.0"], 
      legend = :right,  legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm10.0"], xlabel = "Date Time ",
+Plots.scatter!(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm10.0"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
      ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm10.0"], 
      legend = :right, legendfontsize=10, xrotation = 30)
@@ -366,33 +374,67 @@ png("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/PMTimeSeries")
 
 
 
-Plots.scatter(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm0.1"], xlabel = "Date Time ",
+
+Plots.scatter(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm0.1"], xlabel = "2023-01-03 ",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM Range(mins)", label = dict_plot_pm["pm0.1"], title = "2023-01-03",
+     ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm0.1"], 
+     legend = :right, legendfontsize=10, xrotation = 30)
+Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm0.3"], xlabel = "2023-01-03 ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm0.3"], 
+     legend = :right, legendfontsize=10, xrotation = 30)
+Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm0.5"], xlabel = "2023-01-03 ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm0.5"], 
+     legend = :right, legendfontsize=10, xrotation = 30)
+Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm1.0"], xlabel = "2023-01-03 ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm1.0"], 
+     legend = :right, legendfontsize=10, xrotation = 30)
+Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm2.5"], xlabel = "2023-01-03",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm1.0"], 
+     legend = :right,  legendfontsize=10, xrotation = 30)
+Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm5.0"], xlabel = "2023-01-03",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm5.0"], 
+     legend = :right,  legendfontsize=10, xrotation = 30)
+Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm10.0"], xlabel = "2023-01-03",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm10.0"], 
+     legend = :right, legendfontsize=10, xrotation = 30)
+
+png("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/PMRollingTimeSeries")
+
+
+
+Plots.scatter(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm0.1"], xlabel = "2023-01-03 ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM Range/Time Duration(mins)", label = dict_plot_pm["pm0.1"], 
      legend = :outertopright, legendfontsize=10, xrotation = 30,)
-Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm0.3"], xlabel = "Date Time ",
+Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm0.3"], xlabel = "2023-01-03 ",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM Range(mins)", label = dict_plot_pm["pm0.3"], 
+     ylabel = "PM Range/Time Duration(mins)", label = dict_plot_pm["pm0.3"], 
      legend = :outertopright, legendfontsize=10, xrotation = 30,)
-Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm0.5"], xlabel = "Date Time ",
+Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm0.5"], xlabel = "2023-01-03 ",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM Range(mins)", label = dict_plot_pm["pm0.5"], 
+     ylabel = "PM Range/Time Duration(mins)", label = dict_plot_pm["pm0.5"], 
      legend = :outertopright, legendfontsize=10, xrotation = 30,)
-Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm1.0"], xlabel = "Date Time ",
+Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm1.0"], xlabel = "2023-01-03 ",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM Range(mins)", label = dict_plot_pm["pm1.0"], 
+     ylabel = "PM Range/Time Duration(mins)", label = dict_plot_pm["pm1.0"], 
      legend = :outertopright, legendfontsize=10, xrotation = 30,)
-Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm2.5"], xlabel = "Date Time ",
+Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm2.5"], xlabel = "2023-01-03 ",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM Range(mins)", label = dict_plot_pm["pm2.5"], 
+     ylabel = "PM Range/Time Duration(mins)", label = dict_plot_pm["pm2.5"], 
      legend = :outertopright, legendfontsize=10, xrotation = 30,)
-Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm5.0"], xlabel = "Date Time ",
+Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm5.0"], xlabel = "2023-01-03 ",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM Range(mins)", label = dict_plot_pm["pm5.0"], 
+     ylabel = "PM Range/Time Duration(mins)", label = dict_plot_pm["pm5.0"], 
      legend = :outertopright, legendfontsize=10, xrotation = 30,)
-Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm10.0"], xlabel = "Date Time ",
+Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm10.0"], xlabel = "2023-01-03 ",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM Range(mins)", label = dict_plot_pm["pm10.0"], 
+     ylabel = "PM Range/Time Duration(mins)", label = dict_plot_pm["pm10.0"], 
      legend = :outertopright, legendfontsize=10, xrotation = 30,)
 png("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/PMRangeTimeSeries")
 

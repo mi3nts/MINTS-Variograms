@@ -21,7 +21,7 @@ end
 # Combining all the dataframes into a single dataframe
 data_frame_pm_combined = reduce(vcat,df_pm_list)
 #--------------------------------- End here------------------------------#
-
+# created the rolling time window
 
 
 # Function for cleaning the data
@@ -57,7 +57,20 @@ function missing_data(data_frame)
     df = Impute.locf(df)|>Impute.nocb()
     return df
 end
+
+
 data_frame_pm_updated = missing_data(data_frame_pm)
+ts = collect(data_frame_pm.dateTime[1]+Minute(15):Second(1):data_frame_pm.dateTime[end] + Second(1))
+data_frame_pm_updated_rolling_mean = DataFrame()
+data_frame_pm_updated_rolling_mean.RollingTime = ts
+for i in names(data_frame_pm_updated)[2:end]
+    data_frame_pm_updated_rolling_mean[!,i] = RollingFunctions.rolling(mean,data_frame_pm_updated[!,i],Int(900))
+end
+
+
+
+
+
 function rolling_variogram(df,col) 
     df_mat = df[:,2:end]
     mat = Matrix(df_mat[1:nrow(df),:])[:,col]
@@ -105,8 +118,7 @@ function rolling_variogram(df,col)
     
     return range_vec,sill_vec,nugget_vec
 end
-# created the rolling time window
-ts = collect(data_frame_pm.dateTime[1]+Minute(15):Second(1):data_frame_pm.dateTime[end] + Second(1))
+
 # Created dataframes for range , sill and nugget values with the 15 minute rolling date time window
 df_range.RollingTime = ts
 df_sill.RollingTime = ts
@@ -148,8 +160,8 @@ df_tph_avg = DataFrame(RollingTime = rolling_time_tph,
                        MeanPressure = press_rolling_mean,
                        MeanHumidity = hum_rolling_mean)
 
-df_range_wind_tph_var = outerjoin(outerjoin(df_range,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime)
-df_sill_wind_tph_var = outerjoin(outerjoin(df_sill,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime)
+df_range_wind_tph_var = sort!(outerjoin(outerjoin(df_range,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime),[:RollingTime])
+df_sill_wind_tph_var = sort!(outerjoin(outerjoin(df_sill,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime),[:RollingTime])
 #df_nugget_wind_tph_var = outerjoin(outerjoin(df_nugget,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime)
 
 
@@ -206,29 +218,28 @@ CSV.write(path_to_params*"Sill.csv",df_sill)
 CSV.write(path_to_params*"Wind_TPH_Range.csv",df_range_wind_tph_var)
 CSV.write(path_to_params*"Wind_TPH_Sill.csv",df_sill_wind_tph_var)
 
-# df_range = CSV.read(path_to_params*"Range.csv",DataFrame)
-# df_sill = CSV.read(path_to_params*"Sill.csv",DataFrame)
-# df_range_wind_tph_var = CSV.read(path_to_params*"Wind_TPH_Range.csv",DataFrame)
-# df_sill_wind_tph_var = CSV.read(path_to_params*"Wind_TPH_Sill.csv",DataFrame)
+df_range = CSV.read(path_to_params*"Range.csv",DataFrame)
+df_sill = CSV.read(path_to_params*"Sill.csv",DataFrame)
+df_range_wind_tph_var = CSV.read(path_to_params*"Wind_TPH_Range.csv",DataFrame)
+df_sill_wind_tph_var = CSV.read(path_to_params*"Wind_TPH_Sill.csv",DataFrame)
 
 
-df_range_wind_tph_var.date = Date.(df_range_wind_tph_var.RollingTime) 
-df_range_groupedby_dates = groupby(df_range_wind_tph_var, :date)
-vec_df_range = []
-for i in unique(df_range_wind_tph_var.date)
-    push!(vec_df_range,DataFrame(df_range_groupedby_dates[Dict(:date => i)]))
+
+data_frame_pm_updated = DataFrames.rename!(data_frame_pm_updated,["dateTime";names(df_range)[2:end]])
+data_frame_pm_updated_rolling_mean = DataFrames.rename!(data_frame_pm_updated_rolling_mean,names(df_range))
+function group_by_dates(df)
+    df.date = Date.(df[!,names(df)[1]]) 
+    df_groupedby_dates = groupby(df, :date)
+    vec_df = [] 
+    for i in unique(df.date)[1:7]
+        push!(vec_df,DataFrame(df_groupedby_dates[Dict(:date => i)]))
+    end
+    return vec_df
 end
-
-
-df_sill_wind_tph_var.date = Date.(df_sill_wind_tph_var.RollingTime) 
-df_sill_groupedby_dates = groupby(df_sill_wind_tph_var, :date)
-vec_df_sill= []
-for i in unique(df_sill_wind_tph_var.date)
-    push!(vec_df_sill,DataFrame(df_sill_groupedby_dates[Dict(:date => i)]))
-end
-
-
-
+vec_df_range = group_by_dates(df_range_wind_tph_var) # This will have the range, temperature, pressure,humidity and wind values
+vec_df_sill = group_by_dates(df_sill_wind_tph_var) # This will have the range, temperature, pressure,humidity and wind values
+vec_df_pm = group_by_dates(data_frame_pm_updated)
+vec_df_pm_mean = group_by_dates(data_frame_pm_updated_rolling_mean)
 
 
 function percentile_limits(df)
@@ -301,32 +312,10 @@ end
 pc_tph_plots = tph_plots(tph_path_list,vec_df_range,dict_plot_pc,clim_vals_pc,jet_r,degree)
 pm_tph_plots = tph_plots(tph_path_list,vec_df_range,dict_plot_pm,clim_vals_pm,jet_r,degree)
 
-data_frame_pm_updated.date = Date.(data_frame_pm_updated.dateTime)
-df_pm_updated_groupedby_dates = groupby(data_frame_pm_updated, :date)
-vec_df_pm_updated = []
-for i in unique(data_frame_pm_updated.date)
-    push!(vec_df_pm_updated,DataFrame(df_pm_updated_groupedby_dates[Dict(:date => i)]))
-end
 
 
 
 
-data_frame_pm_updated_rolling_mean = DataFrame()
-data_frame_pm_updated_rolling_mean.RollingTime = ts
-for i in names(data_frame_pm_updated)[2:end]
-    data_frame_pm_updated_rolling_mean[!,i] = RollingFunctions.rolling(mean,data_frame_pm_updated[!,i],Int(900))
-end
-
-data_frame_pm_updated = DataFrames.rename!(data_frame_pm_updated, ["dateTime";names(df_range)[2:end-1]]) 
-
-
-data_frame_pm_updated_rolling_mean = DataFrames.rename!(data_frame_pm_updated_rolling_mean, ["RollingTime";names(df_range)[2:end-1]]) 
-data_frame_pm_updated_rolling_mean.date = Date.(data_frame_pm_updated_rolling_mean.RollingTime)
-df_pm_groupedby_dates = groupby(data_frame_pm_updated_rolling_mean, :date)
-vec_df_pm = []
-for i in unique(data_frame_pm_updated_rolling_mean.date)
-    push!(vec_df_pm,DataFrame(df_pm_groupedby_dates[Dict(:date => i)]))
-end
 
 
 
@@ -337,35 +326,35 @@ end
 #Create a time series with pm and range
 pm_unit = "(μg/m"*latexstring("^3")*")"
 gr()
-tm_ticks = range(Time(vec_df_pm[3].RollingTime[1]),Time(vec_df_pm[3].RollingTime[end]),step =Hour(3))
-tm = string.(collect(tm_ticks))
+tm_ticks = range(Time(vec_df_pm[3].dateTime[1]),Time(vec_df_pm[3].dateTime[end]),step = Hour(3))
+ticks = string.(collect(tm_ticks))
 
 
-Plots.scatter(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm0.1"], xlabel = "2023-01-03",
+Plots.scatter(Time.(vec_df_pm[3].dateTime),vec_df_pm[3][!,"pm0.1"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
      ylabel = "PM concentrations"*pm_unit, label = dict_plot_pm["pm0.1"], 
      legend = :right, legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm0.3"], xlabel = "2023-01-03",
+Plots.scatter!(Time.(vec_df_pm[3].dateTime),vec_df_pm[3][!,"pm0.3"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
      ylabel = "PM concentrations"*pm_unit, label = dict_plot_pm["pm0.3"], 
      legend = :right, legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm0.5"], xlabel = "2023-01-03",
+Plots.scatter!(Time.(vec_df_pm[3].dateTime),vec_df_pm[3][!,"pm0.5"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
      ylabel = "PM concentrations"*pm_unit, label = dict_plot_pm["pm0.5"], 
      legend = :right, legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm1.0"], xlabel = "2023-01-03",
+Plots.scatter!(Time.(vec_df_pm[3].dateTime),vec_df_pm[3][!,"pm1.0"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
      ylabel = "PM concentrations"*pm_unit, label = dict_plot_pm["pm1.0"], 
      legend = :right, legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm2.5"], xlabel = "2023-01-03",
+Plots.scatter!(Time.(vec_df_pm[3].dateTime),vec_df_pm[3][!,"pm2.5"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM concentrations"*pm_unit, label = dict_plot_pm["pm1.0"], 
+     ylabel = "PM concentrations"*pm_unit, label = dict_plot_pm["pm2.5"], 
      legend = :right,  legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm5.0"], xlabel = "2023-01-03",
+Plots.scatter!(Time.(vec_df_pm[3].dateTime),vec_df_pm[3][!,"pm5.0"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
      ylabel = "PM concentrations"*pm_unit, label = dict_plot_pm["pm5.0"], 
      legend = :right,  legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm_updated[3].dateTime),vec_df_pm_updated[3][!,"pm10.0"], xlabel = "2023-01-03",
+Plots.scatter!(Time.(vec_df_pm[3].dateTime),vec_df_pm[3][!,"pm10.0"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
      ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm10.0"], 
      legend = :right, legendfontsize=10, xrotation = 30)
@@ -375,31 +364,31 @@ png("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/PMTimeSeries")
 
 
 
-Plots.scatter(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm0.1"], xlabel = "2023-01-03 ",
+Plots.scatter(Time.(vec_df_pm_mean[3].RollingTime),vec_df_pm_mean[3][!,"pm0.1"], xlabel = "2023-01-03 ",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
      ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm0.1"], 
      legend = :right, legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm0.3"], xlabel = "2023-01-03 ",
+Plots.scatter!(Time.(vec_df_pm_mean[3].RollingTime),vec_df_pm_mean[3][!,"pm0.3"], xlabel = "2023-01-03 ",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
      ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm0.3"], 
      legend = :right, legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm0.5"], xlabel = "2023-01-03 ",
+Plots.scatter!(Time.(vec_df_pm_mean[3].RollingTime),vec_df_pm_mean[3][!,"pm0.5"], xlabel = "2023-01-03 ",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
      ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm0.5"], 
      legend = :right, legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm1.0"], xlabel = "2023-01-03 ",
+Plots.scatter!(Time.(vec_df_pm_mean[3].RollingTime),vec_df_pm_mean[3][!,"pm1.0"], xlabel = "2023-01-03 ",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
      ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm1.0"], 
      legend = :right, legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm2.5"], xlabel = "2023-01-03",
+Plots.scatter!(Time.(vec_df_pm_mean[3].RollingTime),vec_df_pm_mean[3][!,"pm2.5"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
-     ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm1.0"], 
+     ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm2.5"], 
      legend = :right,  legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm5.0"], xlabel = "2023-01-03",
+Plots.scatter!(Time.(vec_df_pm_mean[3].RollingTime),vec_df_pm_mean[3][!,"pm5.0"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
      ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm5.0"], 
      legend = :right,  legendfontsize=10, xrotation = 30)
-Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm10.0"], xlabel = "2023-01-03",
+Plots.scatter!(Time.(vec_df_pm_mean[3].RollingTime),vec_df_pm_mean[3][!,"pm10.0"], xlabel = "2023-01-03",
      xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
      ylabel = "PM concentrations Rolling Mean"*pm_unit, label = dict_plot_pm["pm10.0"], 
      legend = :right, legendfontsize=10, xrotation = 30)
@@ -441,4 +430,24 @@ png("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/PMRangeTimeSerie
 
 
 
+using Unitful, UnitfulRecipes
 
+gr()
+plot()
+p1 = Plots.plot(Time.(dropmissing(vec_df_pm[3],"pm2.5").dateTime),dropmissing(vec_df_pm[3],"pm2.5")[!,"pm2.5"]*u"m";ribbon = 50u"m",title = dict_plot_pm["pm2.5"]*" Concentration"*pm_unit )
+p2 = Plots.plot(Time.(dropmissing(vec_df_pm_mean[3],"pm2.5").RollingTime),dropmissing(vec_df_pm_mean[3],"pm2.5")[!,"pm2.5"]*u"m";ribbon = 5u"m",title = "Rolling Mean of "*dict_plot_pm["pm2.5"]*" Concentration"*pm_unit)
+p3 = Plots.plot(Time.(dropmissing(vec_df_range[3],"pm2.5").RollingTime),dropmissing(vec_df_range[3],"pm2.5")[!,"pm2.5"]*u"m";ribbon = 1u"m",title = dict_plot_pm["pm2.5"]*" Range/TimeScale(mins)")
+p4 = Plots.plot(Time.(dropmissing(vec_df_range[3],"MeanWindSpeed").RollingTime),dropmissing(vec_df_range[3],"MeanWindSpeed")[!,"MeanWindSpeed"]*u"m";ribbon = 1u"m",title = "Rolling Mean of Wind Speed(m/s)")
+p5 = Plots.plot(Time.(dropmissing(vec_df_range[3],"MeanWindDirection").RollingTime),dropmissing(vec_df_range[3],"MeanWindDirection")[!,"MeanWindDirection"]*u"m";ribbon = 25u"m",title = "Rolling Mean of Wind Direction("*degree*")")
+
+plot(p1,p2,p3,p4,p5,layout=(5,1), xrotation = 30,size=(1500,1500),legend = false,ylabel="")
+
+png("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/PM2.5")
+
+x = y = (0:10)*u"m"
+plot(
+    plot(x,y; ribbon = (0:0.5:5)*u"m", label = "Vector"),
+    plot(x,y; ribbon = sqrt, label = "Function"),
+    plot(x,y; ribbon = 1u"m", label = "Constant"),
+    link=:all
+)

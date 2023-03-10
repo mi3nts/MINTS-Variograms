@@ -2,7 +2,7 @@ library("openair")
 library("latex2exp")
 library("dplyr")
 wind_data = read.csv("D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\Parameters\\csv\\Wind_TPH_Range.csv")
-wind_data = subset(wind_data,date == '2023-01-01')
+wind_data = subset(wind_data,date == '2023-01-03')
 
 pm_range = c(wind_data$pm0.1,wind_data$pm0.3,wind_data$pm0.5,
              wind_data$pm1.0,wind_data$pm2.5,wind_data$pm5.0,
@@ -11,8 +11,8 @@ pm_range = na.omit(pm_range)
 
 
 
-#lim = quantile(pm_range, c(0.001,.999))
-lim = c(min(pm_range),max(pm_range))
+lim = quantile(pm_range, c(0.05,.95))
+#lim = c(min(pm_range),max(pm_range))
 mydata_sample = mydata[c(1:nrow(wind_data)),]
 mydata_sample$pm0.1 = wind_data$pm0.1
 mydata_sample$ws = wind_data$MeanWindSpeed
@@ -30,7 +30,7 @@ mydata_sample = subset(mydata_sample, select = -c(so2,no2,o3,nox,pm10,co,pm25))
 rev_default_col = c("#9E0142","#FA8C4E","#FFFFBF","#88D1A4","#5E4FA2")
 
 #title = "2023-01-01 - 2023-01-07"
-title = "2023-01-01"
+title = "2023-01-03"
 
 
 polarPlot(mydata_sample,pollutant = "pm0.1",main = title,k =30,cols = rev_default_col,key.position = "bottom",

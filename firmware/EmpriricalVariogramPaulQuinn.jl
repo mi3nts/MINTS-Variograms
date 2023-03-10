@@ -44,7 +44,7 @@ strpm2_5 = "PM"*latexstring("_{2.5}")
 strpm5_0 = "PM"*latexstring("_{5.0}")
 strpm10_0 = "PM"*latexstring("_{10.0}")
 
-y_unit = "(μg/cm3)"#*latexstring("_{0.1}")
+y_unit = "(μg/m3)"#*latexstring("_{0.1}")
 ylab = "PM concentrations"
 y_vals = names(df_hourly)[2:end]
 xlab = "DateTime"

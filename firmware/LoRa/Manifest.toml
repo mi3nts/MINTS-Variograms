@@ -2,7 +2,7 @@
 
 julia_version = "1.8.2"
 manifest_format = "2.0"
-project_hash = "e39eab362ee934c3f9eabd272882c168a6e314b7"
+project_hash = "fd3c29f6ed82326d09be9409a734f05195861956"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -1671,9 +1671,15 @@ version = "0.4.1"
 
 [[deps.Unitful]]
 deps = ["ConstructionBase", "Dates", "LinearAlgebra", "Random"]
-git-tree-sha1 = "d670a70dd3cdbe1c1186f2f17c9a68a7ec24838c"
+git-tree-sha1 = "bb37ed24f338bc59b83e3fc9f32dd388e5396c53"
 uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
-version = "1.12.2"
+version = "1.12.4"
+
+[[deps.UnitfulRecipes]]
+deps = ["RecipesBase", "Unitful"]
+git-tree-sha1 = "fd04ae3d683246418f2087d90d7babe56aed50d3"
+uuid = "42071c24-d89e-48dd-8a24-8a12d9b8861f"
+version = "1.6.1"
 
 [[deps.Unzip]]
 git-tree-sha1 = "ca0969166a028236229f63514992fc073799bb78"

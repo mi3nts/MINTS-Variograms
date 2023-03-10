@@ -150,7 +150,7 @@ df_tph_avg = DataFrame(RollingTime = rolling_time_tph,
 
 df_range_wind_tph_var = outerjoin(outerjoin(df_range,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime)
 df_sill_wind_tph_var = outerjoin(outerjoin(df_sill,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime)
-df_nugget_wind_tph_var = outerjoin(outerjoin(df_nugget,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime)
+#df_nugget_wind_tph_var = outerjoin(outerjoin(df_nugget,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime)
 
 
 
@@ -197,13 +197,27 @@ for j in 1:1:length(unique_date_values)
     end  
 end
 
+
+
+path_to_params = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/csv/"
+mkpath(path_to_params)
+CSV.write(path_to_params*"Range.csv",df_range)
+CSV.write(path_to_params*"Sill.csv",df_sill)
+CSV.write(path_to_params*"Wind_TPH_Range.csv",df_range_wind_tph_var)
+CSV.write(path_to_params*"Wind_TPH_Sill.csv",df_sill_wind_tph_var)
+
+# df_range = CSV.read(path_to_params*"Range.csv",DataFrame)
+# df_sill = CSV.read(path_to_params*"Sill.csv",DataFrame)
+# df_range_wind_tph_var = CSV.read(path_to_params*"Wind_TPH_Range.csv",DataFrame)
+# df_sill_wind_tph_var = CSV.read(path_to_params*"Wind_TPH_Sill.csv",DataFrame)
+
+
 df_range_wind_tph_var.date = Date.(df_range_wind_tph_var.RollingTime) 
 df_range_groupedby_dates = groupby(df_range_wind_tph_var, :date)
 vec_df_range = []
 for i in unique(df_range_wind_tph_var.date)
     push!(vec_df_range,DataFrame(df_range_groupedby_dates[Dict(:date => i)]))
 end
-
 
 
 df_sill_wind_tph_var.date = Date.(df_sill_wind_tph_var.RollingTime) 
@@ -214,40 +228,23 @@ for i in unique(df_sill_wind_tph_var.date)
 end
 
 
-path_to_params = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/csv/"
-mkpath(path_to_params)
-
-CSV.write(path_to_params*"Range.csv",df_range)
-CSV.write(path_to_params*"Sill.csv",df_sill)
-CSV.write(path_to_params*"Wind_TPH_Range.csv",df_range_wind_tph_var)
-
-df_range = CSV.read(path_to_params*"Range.csv",DataFrame)
-df_sill = CSV.read(path_to_params*"Sill.csv",DataFrame)
-df_range_wind_tph_var = CSV.read(path_to_params*"Wind_TPH_Range.csv",DataFrame)
 
 
 
-
-clim_vals_pc  = []
-clim_vals_pm  = []
-for i in 2:8
-    append!(clim_vals_pc,df_range[:,i]) 
+function percentile_limits(df)
+    lim_low = round(percentile(skipmissing(reduce(vcat,[df[:,i] for i in names(df)])),1 ); digits = 2)
+    lim_high = round(percentile(skipmissing(reduce(vcat,[df[:,i] for i in names(df)])),99 ); digits = 2)
+    return [lim_low,lim_high]
 end
+clim_vals_pc  = percentile_limits(df_range[:,2:8])
+clim_vals_pm  = percentile_limits(df_range[:,9:15])
 
-for i in 9:15
-    append!(clim_vals_pm,df_range[:,i]) 
-end
 
 ############################################################ Fixed Till here #######################################################################################
 
 
 
 
-clim_low_pc = round(percentile(skipmissing(clim_vals_pc),1 ); digits = 2)
-clim_high_pc = round(percentile(skipmissing(clim_vals_pc),99 ); digits = 2)
-
-clim_low_pm = round(percentile(skipmissing(clim_vals_pm),1 ); digits = 2)
-clim_high_pm = round(percentile(skipmissing(clim_vals_pm),99 ); digits = 2)
 
 
 strpc0_1 = "Particle Count for "*"PM"*latexstring("_{0.1}")
@@ -271,65 +268,38 @@ dict_plot_pm = OrderedDict("pm0.1"=>strpm0_1, "pm0.3"=>strpm0_3, "pm0.5"=>strpm0
 gr()
 jet_r = reverse(cgrad(:jet))
 
-for i in 1:1:length(tph_path_list)
-    for (key,value) in dict_plot_pm
-        if !(isdir(tph_path_list[i]*"/"*key))    
-            mkdir(tph_path_list[i]*"/"*key)
-        end    
-        
-        Plots.scatter(dropmissing(vec_df_range[i],key).MeanTemperature, dropmissing(vec_df_range[i],key).MeanHumidity, 
-        zcolor =  dropmissing(vec_df_range[i],key)[!,key],markerstrokewidth=0,color = jet_r , xlabel ="Temperature("*degree*"C)",ylabel= "Humidity (% r.H)",
-        legend = false, colorbar = true, colorbar_title = " \n"*dict_plot_pm[key]*" Range (mins)",clims=(clim_low_pm,clim_high_pm),right_margin = 5Plots.mm,
-        title = Date(vec_df_range[i].RollingTime[1]))
+function tph_plots(tph_path_list,vec_df,dict_plot,clim_vals,jet_r,degree)
+    for i in 1:1:length(tph_path_list)
+        for (key,value) in dict_plot
+            if !(isdir(tph_path_list[i]*"/"*key))    
+                mkdir(tph_path_list[i]*"/"*key)
+            end    
+            
+            Plots.scatter(dropmissing(vec_df[i],key).MeanTemperature, dropmissing(vec_df[i],key).MeanHumidity, 
+            zcolor =  dropmissing(vec_df[i],key)[!,key],markerstrokewidth=0,color = jet_r , xlabel ="Temperature("*degree*"C)",ylabel= "Humidity (% r.H)",
+            legend = false, colorbar = true, colorbar_title = " \n"*dict_plot[key]*" Range (mins)",clims=(clim_vals[1],clim_vals[2]),right_margin = 5Plots.mm,
+            title = Date(vec_df[i].RollingTime[1]))
 
-        png(tph_path_list[i]*"/"*key*"/"*"TH")
+            png(tph_path_list[i]*"/"*key*"/"*"TH")
 
-        Plots.scatter(dropmissing(vec_df_range[i],key).MeanPressure, dropmissing(vec_df_range[i],key).MeanHumidity, 
-        zcolor =  dropmissing(vec_df_range[i],key)[!,key],markerstrokewidth=0,color = jet_r ,xlabel ="Pressure(hPa)",ylabel= "Humidity (% r.H)",
-        legend = false, colorbar = true, colorbar_title = " \n"*dict_plot_pm[key]*" Range (mins)", clims=(clim_low_pm,clim_high_pm),right_margin = 5Plots.mm,
-        title = Date(vec_df_range[i].RollingTime[1]))
+            Plots.scatter(dropmissing(vec_df[i],key).MeanPressure, dropmissing(vec_df[i],key).MeanHumidity, 
+            zcolor =  dropmissing(vec_df[i],key)[!,key],markerstrokewidth=0,color = jet_r ,xlabel ="Pressure(hPa)",ylabel= "Humidity (% r.H)",
+            legend = false, colorbar = true, colorbar_title = " \n"*dict_plot[key]*" Range (mins)", clims=(clim_vals[1],clim_vals[2]),right_margin = 5Plots.mm,
+            title = Date(vec_df[i].RollingTime[1]))
 
-        png(tph_path_list[i]*"/"*key*"/"*"PH")
+            png(tph_path_list[i]*"/"*key*"/"*"PH")
 
-        Plots.scatter(dropmissing(vec_df_range[i],key).MeanPressure, dropmissing(vec_df_range[i],key).MeanTemperature, 
-        zcolor = dropmissing(vec_df_range[i],key)[!,key], markerstrokewidth=0,color = jet_r , xlabel ="Pressure(hPa)",ylabel= "Temperature("*degree*"C)",
-        legend = false, colorbar = true, colorbar_title = " \n"*dict_plot_pm[key]*" Range (mins)", clims=(clim_low_pm,clim_high_pm),right_margin = 5Plots.mm,
-        title = Date(vec_df_range[i].RollingTime[1]))
+            Plots.scatter(dropmissing(vec_df[i],key).MeanPressure, dropmissing(vec_df[i],key).MeanTemperature, 
+            zcolor = dropmissing(vec_df[i],key)[!,key], markerstrokewidth=0,color = jet_r , xlabel ="Pressure(hPa)",ylabel= "Temperature("*degree*"C)",
+            legend = false, colorbar = true, colorbar_title = " \n"*dict_plot[key]*" Range (mins)", clims=(clim_vals[1],clim_vals[2]),right_margin = 5Plots.mm,
+            title = Date(vec_df[i].RollingTime[1]))
 
-        png(tph_path_list[i]*"/"*key*"/"*"PT")
+            png(tph_path_list[i]*"/"*key*"/"*"PT")
+        end
     end
 end
-
-for i in 1:1:length(tph_path_list)
-    for (key,value) in dict_plot_pc
-        if !(isdir(tph_path_list[i]*"/"*key))    
-            mkdir(tph_path_list[i]*"/"*key)
-        end    
-        println("key: ", key, tph_path_list[i])
-        Plots.scatter(dropmissing(vec_df_range[i],key).MeanTemperature, dropmissing(vec_df_range[i],key).MeanHumidity, 
-        zcolor =  dropmissing(vec_df_range[i],key)[!,key],markerstrokewidth=0,color = jet_r , xlabel ="Temperature("*degree*"C)",ylabel= "Humidity (% r.H)",
-        legend = false, colorbar = true, colorbar_title = " \n"*dict_plot_pc[key]*" Range (mins)",clims=(clim_low_pc,clim_high_pc),right_margin = 5Plots.mm,
-        title = Date(vec_df_range[i].RollingTime[1]))
-
-        png(tph_path_list[i]*"/"*key*"/"*"TH")
-
-        Plots.scatter(dropmissing(vec_df_range[i],key).MeanPressure, dropmissing(vec_df_range[i],key).MeanHumidity, 
-        zcolor =  dropmissing(vec_df_range[i],key)[!,key],markerstrokewidth=0,color = jet_r ,xlabel ="Pressure(hPa)",ylabel= "Humidity (% r.H)",
-        legend = false, colorbar = true, colorbar_title = " \n"*dict_plot_pc[key]*" Range (mins)", clims=(clim_low_pc,clim_high_pc),right_margin = 5Plots.mm,
-        title = Date(vec_df_range[i].RollingTime[1]))
-
-        png(tph_path_list[i]*"/"*key*"/"*"PH")
-
-        Plots.scatter(dropmissing(vec_df_range[i],key).MeanPressure, dropmissing(vec_df_range[i],key).MeanTemperature, 
-        zcolor = dropmissing(vec_df_range[i],key)[!,key], markerstrokewidth=0,color = jet_r , xlabel ="Pressure(hPa)",ylabel= "Temperature("*degree*"C)",
-        legend = false, colorbar = true, colorbar_title = " \n"*dict_plot_pc[key]*" Range (mins)", clims=(clim_low_pc,clim_high_pc),right_margin = 5Plots.mm,
-        title = Date(vec_df_range[i].RollingTime[1]))
-
-        png(tph_path_list[i]*"/"*key*"/"*"PT")
-    end
-end
-
-
+pc_tph_plots = tph_plots(tph_path_list,vec_df_range,dict_plot_pc,clim_vals_pc,jet_r,degree)
+pm_tph_plots = tph_plots(tph_path_list,vec_df_range,dict_plot_pm,clim_vals_pm,jet_r,degree)
 
 data_frame_pm_updated_rolling_mean = DataFrame()
 data_frame_pm_updated_rolling_mean.RollingTime = ts
@@ -342,5 +312,91 @@ data_frame_pm_updated_rolling_mean = DataFrames.rename!(data_frame_pm_updated_ro
 
 
 
-function plots_pm()
+
+
+data_frame_pm_updated_rolling_mean.date = Date.(data_frame_pm_updated_rolling_mean.RollingTime)
+df_pm_groupedby_dates = groupby(data_frame_pm_updated_rolling_mean, :date)
+vec_df_pm = []
+for i in unique(data_frame_pm_updated_rolling_mean.date)
+    push!(vec_df_pm,DataFrame(df_pm_groupedby_dates[Dict(:date => i)]))
 end
+
+
+
+
+
+
+
+#Create a time series with pm and range
+pm_unit = "(μg/m"*latexstring("^3")*")"
+gr()
+tm_ticks = range(Time(vec_df_pm[3].RollingTime[1]),Time(vec_df_pm[3].RollingTime[end]),step =Hour(3))
+tm = string.(collect(tm_ticks))
+
+Plots.scatter(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm0.1"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm0.1"], 
+     legend = :right, legendfontsize=10, xrotation = 30,title = "2023-01-03")
+Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm0.3"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm0.3"], 
+     legend = :right, legendfontsize=10, xrotation = 30)
+Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm0.5"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm0.5"], 
+     legend = :right, legendfontsize=10, xrotation = 30)
+Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm1.0"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm1.0"], 
+     legend = :right, legendfontsize=10, xrotation = 30)
+Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm2.5"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm1.0"], 
+     legend = :right,  legendfontsize=10, xrotation = 30)
+Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm5.0"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm5.0"], 
+     legend = :right,  legendfontsize=10, xrotation = 30)
+Plots.scatter!(Time.(vec_df_pm[3].RollingTime),vec_df_pm[3][!,"pm10.0"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM concentrations "*pm_unit, label = dict_plot_pm["pm10.0"], 
+     legend = :right, legendfontsize=10, xrotation = 30)
+
+png("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/PMTimeSeries")
+
+
+
+Plots.scatter(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm0.1"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM Range(mins)", label = dict_plot_pm["pm0.1"], title = "2023-01-03",
+     legend = :outertopright, legendfontsize=10, xrotation = 30,)
+Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm0.3"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM Range(mins)", label = dict_plot_pm["pm0.3"], 
+     legend = :outertopright, legendfontsize=10, xrotation = 30,)
+Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm0.5"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM Range(mins)", label = dict_plot_pm["pm0.5"], 
+     legend = :outertopright, legendfontsize=10, xrotation = 30,)
+Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm1.0"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM Range(mins)", label = dict_plot_pm["pm1.0"], 
+     legend = :outertopright, legendfontsize=10, xrotation = 30,)
+Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm2.5"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM Range(mins)", label = dict_plot_pm["pm2.5"], 
+     legend = :outertopright, legendfontsize=10, xrotation = 30,)
+Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm5.0"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM Range(mins)", label = dict_plot_pm["pm5.0"], 
+     legend = :outertopright, legendfontsize=10, xrotation = 30,)
+Plots.scatter!(Time.(vec_df_range[3].RollingTime),vec_df_range[3][!,"pm10.0"], xlabel = "Date Time ",
+     xticks = (tm_ticks,ticks),markerstrokewidth=0,markersize=3,
+     ylabel = "PM Range(mins)", label = dict_plot_pm["pm10.0"], 
+     legend = :outertopright, legendfontsize=10, xrotation = 30,)
+png("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/PMRangeTimeSeries")
+
+
+
+
+

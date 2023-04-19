@@ -2,7 +2,7 @@ library("openair")
 library("latex2exp")
 library("dplyr")
 wind_data = read.csv("D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\Parameters\\csv\\Wind_TPH_Range.csv")
-wind_data = subset(wind_data,date == '2023-01-03')
+#wind_data = subset(wind_data,date == '2023-01-03')
 
 pm_range = c(wind_data$pm0.1,wind_data$pm0.3,wind_data$pm0.5,
              wind_data$pm1.0,wind_data$pm2.5,wind_data$pm5.0,

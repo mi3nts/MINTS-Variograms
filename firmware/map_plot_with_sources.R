@@ -1,15 +1,21 @@
+
 library(openairmaps)
 library(leaflet)
 library(dplyr)
 library(tidygeocoder)
-
+library(lubridate)
 
 sources = read.csv("D:\\UTD\\UTDSpring2023\\Pollution-Sources---Self-reported-emission-data\\SourceLocations.csv")
 coordinates <- sources %>%
   geocode(Address)
 
+traj <- importTraj(site = "london", year = 2010)
+head(traj)
+
 wind_data = read.csv("D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\Parameters\\csv\\Wind_TPH_Range.csv")
-wind_data = subset(wind_data,date == '2023-01-03')
+wind_data = wind_data %>% filter(RollingTime >= as.POSIXct('2023-01-03 00:00:00.0') & 
+                       RollingTime <= as.POSIXct('2023-01-03 23:59:59.0'))
+
 
 pm_range = c(wind_data$pm0.1,wind_data$pm0.3,wind_data$pm0.5,
              wind_data$pm1.0,wind_data$pm2.5,wind_data$pm5.0,
@@ -38,15 +44,25 @@ rev_default_col = c("#9E0142","#FA8C4E","#FFFFBF","#88D1A4","#5E4FA2")
 
 #title = "2023-01-01 - 2023-01-07"
 title = "2023-01-03"
-
-
+cols = c("ws","wd")
+mydata_sample = mydata_sample[!rowSums(is.na(mydata_sample[cols])), ]
 
 # make map
 
-polarMap(mydata_sample,pollutant = "pm0.1",main = title,k =30,cols = rev_default_col,key.position = "bottom",
-          key.header = TeX('$\\PM_0._1\\ Range(Minutes)$'),  key.footer =NULL,
+polarMap(mydata_sample,pollutant = "pm0.1",main = title,k =30,cols = rev_default_col,key.position = "bottom"
+         ,  key.footer =NULL,
           limits = c(lim[1],lim[2]),par.settings=list(fontsize=list(text=10))) %>%
   # add markers
-  addCircleMarkers(data = coordinates,lng = ~long, lat = ~lat,
+addCircleMarkers(data = coordinates,lng = ~long, lat = ~lat,
              popup = ~SITE,
-             label = ~SITE)
+             label = ~SITE)%>%
+  
+
+selectByDate(traj,
+             start = "15/4/2010",
+             end = "21/4/2010"
+) %>%
+  trajPlot(
+    map.cols = openColours("hue", 10),
+    col = "grey30"
+  )

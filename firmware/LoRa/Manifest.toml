@@ -2,7 +2,7 @@
 
 julia_version = "1.8.2"
 manifest_format = "2.0"
-project_hash = "fd3c29f6ed82326d09be9409a734f05195861956"
+project_hash = "138e8bdf96ae162842fcbc95430c29fb51c46cd9"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -315,6 +315,12 @@ version = "1.0.0"
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
+
+[[deps.DecisionTree]]
+deps = ["AbstractTrees", "DelimitedFiles", "LinearAlgebra", "Random", "ScikitLearnBase", "Statistics"]
+git-tree-sha1 = "c6475a3ccad06cb1c2ebc0740c1bb4fe5a0731b7"
+uuid = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
+version = "0.12.3"
 
 [[deps.DefineSingletons]]
 git-tree-sha1 = "0fba8b706d0178b4dc7fd44a96a92382c9065c2c"
@@ -916,6 +922,12 @@ version = "7.2.0"
 deps = ["Libdl", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
+[[deps.LinearFitXYerrors]]
+deps = ["Distributions", "Plots", "Printf", "Statistics"]
+git-tree-sha1 = "ed6aaa10b627236dd51a2bcca3b855764f1d1c60"
+uuid = "f30eeb3b-f5f0-4632-88ad-a7e11dd3714b"
+version = "0.1.0"
+
 [[deps.LogExpFunctions]]
 deps = ["ChainRulesCore", "ChangesOfVariables", "DocStringExtensions", "InverseFunctions", "IrrationalConstants", "LinearAlgebra"]
 git-tree-sha1 = "45b288af6956e67e621c5cbb2d75a261ab58300b"
@@ -986,6 +998,12 @@ deps = ["Bessels", "CircularArrays", "Distances", "IterTools", "IteratorInterfac
 git-tree-sha1 = "a68abf115a6edca428a2bc97af1d7ba90e55e069"
 uuid = "eacbb407-ea5a-433e-ab97-5258b1ca43fa"
 version = "0.25.15"
+
+[[deps.Metrics]]
+deps = ["DataFrames", "DataStructures", "Random", "StatsBase"]
+git-tree-sha1 = "6e9e77751dd230b360c29e23a10f6e6d2f4fafaf"
+uuid = "cb9f3049-315b-4f05-b90c-a8adaec4da78"
+version = "0.1.2"
 
 [[deps.MicroCollections]]
 deps = ["BangBang", "InitialValues", "Setfield"]
@@ -1403,6 +1421,18 @@ git-tree-sha1 = "a8e18eb383b5ecf1b5e6fc237eb39255044fd92b"
 uuid = "30f210dd-8aff-4c5f-94ba-8e64358c1161"
 version = "3.0.0"
 
+[[deps.ScikitLearn]]
+deps = ["Compat", "Conda", "DataFrames", "Distributed", "IterTools", "LinearAlgebra", "MacroTools", "Parameters", "Printf", "PyCall", "Random", "ScikitLearnBase", "SparseArrays", "StatsBase", "VersionParsing"]
+git-tree-sha1 = "32c302f5e6bd7a0c6a44668bfe5133c2ff076191"
+uuid = "3646fa90-6ef7-5e7e-9f22-8aca16db6324"
+version = "0.6.6"
+
+[[deps.ScikitLearnBase]]
+deps = ["LinearAlgebra", "Random", "Statistics"]
+git-tree-sha1 = "7877e55c1523a4b336b433da39c8e8c08d2f221f"
+uuid = "6e75b9c4-186b-50bd-896f-2d2496a4843e"
+version = "0.5.0"
+
 [[deps.Scratch]]
 deps = ["Dates"]
 git-tree-sha1 = "f94f779c94e58bf9ea243e77a37e16d9de9126bd"
@@ -1438,6 +1468,12 @@ deps = ["Dates", "Grisu"]
 git-tree-sha1 = "91eddf657aca81df9ae6ceb20b959ae5653ad1de"
 uuid = "992d4aef-0814-514b-bc4d-f2e9a6c4116f"
 version = "1.0.3"
+
+[[deps.Shuffle]]
+deps = ["Random"]
+git-tree-sha1 = "b812fb30d6d8b295b71dd5a4102d1ae7b60698e3"
+uuid = "bf21e494-c40e-4daa-abfb-de5ec0aad010"
+version = "0.1.1"
 
 [[deps.SnoopPrecompile]]
 deps = ["Preferences"]

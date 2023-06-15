@@ -2,7 +2,6 @@ using DelimitedFiles,CSV,DataFrames,Dates,Statistics,DataStructures,Plots,TimeSe
 using StatsBase, Statistics,Polynomials,Peaks,RollingFunctions
 
 include("File_Search_trial.jl")
-#include("CentralNodeGunter_Wind_TPH.jl")
 
 # Loading the packages
 using DelimitedFiles,CSV,DataFrames,Dates,Statistics,DataStructures,Plots,TimeSeries,Impute,LaTeXStrings

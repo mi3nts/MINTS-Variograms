@@ -1,6 +1,22 @@
+library(raster)
+#library(ncdf4)
+
+#download.file(url = 'ftp://ftp.hpc.ncep.noaa.gov/grib/20130815/p06m_2013081500f030.grb', destfile = 'test.grb')
+
+#(r <- raster('D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\gdas1.apr23.w1.grb'))
+
+#n <- writeRaster(r, filename = 'netcdf_in_youR_comp.nc', overwrite = TRUE)
+
+
+#fname = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\gdas1.apr23.w1"
+#gribdata = readGDAL(fname)
+
+
+
+library("dplyr")
 library("openair")
 library("latex2exp")
-library("dplyr")
+
 wind_data = read.csv("D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\Parameters\\csv\\Wind_TPH_Range.csv")
 #wind_data = subset(wind_data,date == '2023-01-03')
 

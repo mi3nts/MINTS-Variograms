@@ -9,8 +9,8 @@ sources = read.csv("D:\\UTD\\UTDSpring2023\\Pollution-Sources---Self-reported-em
 coordinates <- sources %>%
   geocode(Address)
 
-traj <- importTraj(site = "london", year = 2010)
-head(traj)
+#traj <- importTraj(site = "london", year = 2010)
+#head(traj)
 
 wind_data = read.csv("D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\Parameters\\csv\\Wind_TPH_Range.csv")
 wind_data = wind_data %>% filter(RollingTime >= as.POSIXct('2023-01-03 00:00:00.0') & 
@@ -55,14 +55,25 @@ polarMap(mydata_sample,pollutant = "pm0.1",main = title,k =30,cols = rev_default
   # add markers
 addCircleMarkers(data = coordinates,lng = ~long, lat = ~lat,
              popup = ~SITE,
-             label = ~SITE)%>%
+             label = ~SITE)#%>%
   
 
-selectByDate(traj,
-             start = "15/4/2010",
-             end = "21/4/2010"
-) %>%
-  trajPlot(
-    map.cols = openColours("hue", 10),
-    col = "grey30"
-  )
+
+library(rnoaa)
+
+region <- "DALLAS"
+start_date <- "20/12/2022"
+end_date <- "20/01/2023"
+
+stations <- ncdc_stations(datasetid = "NOS.COOPS",
+                          extent = region,
+                          startdate = start_date,
+                          enddate = end_date)
+#selectByDate(traj,
+  #           start = "15/4/2010",
+  #           end = "21/4/2010"
+#) %>%
+#  trajPlot(
+#    map.cols = openColours("hue", 10),
+#    col = "grey30"
+#  )

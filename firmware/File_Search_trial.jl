@@ -23,6 +23,7 @@ function list_csv(path_to_data,sensor_name)
     list_csv_path = readdir.(fulldirpaths_days; join=true) # find the list of files in each day folder
     index_sensor = []
     #This loop helps in finding the missing sensor path
+   
     for i in list_csv_path
        if (1 in Int.(occursin.(sensor_name,i)))
         append!(index_sensor,findall(x->x==1, Int.(occursin.(sensor_name,i))))
@@ -33,15 +34,20 @@ function list_csv(path_to_data,sensor_name)
     
 
     deleteat!(csv_date, findall(x->x == -1, index_sensor))
-    deleteat!(index_sensor, findall(x->x == -1, index_sensor))
-
+ 
     df_csv_path = DataFrame()
     df_csv_path.Date = csv_date
 
     list_sensor_csv = []
-    for i in 1:1:length(csv_date)
+    for i in 1:1:length(index_sensor)
+        try
         push!(list_sensor_csv,list_csv_path[i][index_sensor[i]]) 
+        catch l1
+            push!(list_sensor_csv,"missing") 
+        end
     end
+    filter!(x -> x != "missing", list_sensor_csv)
+
     println(length(list_sensor_csv))
     df_csv_path[!,sensor_name] =  list_sensor_csv
     return df_csv_path
@@ -52,6 +58,6 @@ path_to_pm_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e063
 path_to_wind_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e06430225\\"
 path_to_tph_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e0636e547\\"
 df_pm_csv = list_csv(path_to_pm_data,"IPS7100")
-df_wind_csv  = list_csv(path_to_wind_data,"WIMDA")
-df_tph_csv = list_csv(path_to_tph_data,"BME680")
+#df_wind_csv  = list_csv(path_to_wind_data,"WIMDA")
+#df_tph_csv = list_csv(path_to_tph_data,"BME680")
 

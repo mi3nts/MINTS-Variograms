@@ -200,7 +200,7 @@ for i in 1:1:14
     df_nugget[!,dict_pm[i]] = rolling_variogram(data_frame_pm_updated,i)[3]  
 end
 
-##########################################################
+##########################RUN UNTIL HERE TO GENERATE RANGE FOR PM VALUES################################
 
 #df_parameters = DataFrame("TimeStamp"=>ts,dict_pm[col]*"_"*"Range" => range_vec[1:length(ts)] ,dict_pm[col]*"_"*"Sill" => sill_vec[1:length(ts)], dict_pm[col]*"_"*"Nugget" => nugget_vec[1:length(ts)] )
 # insert!(df_parameters,1,ts,:TimeStamp) 

@@ -47,7 +47,7 @@ function data_cleaning(data_frame)
     data_frame.dateTime = DateTime.(data_frame.dateTime,"yyyy-mm-dd HH:MM:SS") # Converting the dateime columns[1:19] to DateTime format in Julia
     data_frame.dateTime = data_frame.dateTime + data_frame.ms # Adding the converted date time to the millisecond that was rounded to seconds
     data_frame = select!(data_frame, Not(:ms)) # Deleting the ms column
-    #col_symbols = Symbol.(names(data_frame)) 
+    #manually set colum names
     col_symbols = [:pc0_1, :pc0_3, :pc0_5, :pc1_0, :pc2_5, :pc5_0, :pc10_0 ,:pm0_1, :pm0_3, :pm0_5, :pm1_0, :pm2_5, :pm5_0, :pm10_0]
 
     for i in 1:1:nrow(data_frame)
@@ -90,7 +90,7 @@ function data_cleaning(data_frame)
     # wl = filter(x -> isa.(x, String31), data_frame[!,:pm0_5])
     # y = findall(x -> x .== wl[1], data_frame[!,:pm0_5])
     # data_frame[!,:pm0_5][y] == missing
-
+    #manually set column names
     data_frame = DataFrames.combine(DataFrames.groupby(data_frame, :dateTime), [:pc0_1, :pc0_3, :pc0_5, :pc1_0, :pc2_5, :pc5_0, :pc10_0, :pm0_1,:pm0_3, :pm0_5, :pm1_0,:pm2_5,:pm5_0, :pm10_0] .=> mean) # what exactly does this do
 
     return data_frame, col_symbols # returns the dataframe and column symbols

@@ -1,2 +1,2 @@
-# MINTS-LoRa-Variograms
+# MINTS-Variograms
 

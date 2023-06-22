@@ -117,7 +117,7 @@ DataFrames.rename!(γ,n)
 for i in 1:length(lab)
     #PM values
     #changed title here
-    plot(γ.Δt,γ[!,y_vals[i]],xlabel ="Δt(minutes)" ,ylabel= "Variogram (γ(Δt))", title = "01-03-2023",legend=:outertopright,linewidth=4, legendfontsize=12,label=lab[i],xticks= 0:3:120, xrotation = 90)
+    plot(γ.Δt,γ[!,y_vals[i]],xlabel ="time lag (minutes)" ,ylabel= "Variogram (γ(Δt)) for PM 2.5", title = "01-03-2023",legend=:outertopright,linewidth=4, legendfontsize=10, label=lab[i],xticks= 0:3:120, xrotation = 90)
     plot!([findmaxima(γ[!,y_vals[i]])[2][1]], seriestype="hline",label= "Sill",line=(:dot, 4))
     plot!([γ.Δt[findmaxima(γ[!,y_vals[i]])[1][1]]], seriestype="vline",label= "Range",line=(:dot, 4))
     x_intersect = 0

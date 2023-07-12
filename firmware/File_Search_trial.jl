@@ -1,6 +1,7 @@
 using Pkg
-Pkg.activate("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/LoRa")
-using DelimitedFiles,CSV,DataFrames,Dates,Statistics,DataStructures
+Pkg.activate("LoRa")
+
+using CSV,DataFrames,Dates
 
 
 
@@ -16,7 +17,7 @@ function list_csv(path_to_data,sensor_name)
     append!(date_str,last.(fulldirpaths_days,10))# Appending the date string in yyyy\\mm\\dd format
 
     date_str = replace.(date_str, "\\" => "-",count=3)
-    csv_date = Date.(date_str, "yyyy-mm-dd")# Converted date string tto date time format
+    csv_date = Date.(date_str, "yyyy/mm/dd")# Converted date string to date time format(replace yyyy/mm/dd with yyyy-mm-dd for windows)
 
     # This is how the files name should end ======> IPS7100_2022_10_05.csv
 
@@ -54,9 +55,9 @@ function list_csv(path_to_data,sensor_name)
 end
 
 # path to all csv files for gunter Central node
-path_to_pm_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e0636e547\\" 
-path_to_wind_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e06430225\\"
-path_to_tph_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e0636e547\\"
+path_to_pm_data = "/home/teamlary/Desktop/data/Joppa/001e0636e547/" 
+path_to_wind_data = "/home/teamlary/Desktop/data/Joppa/001e06430225/"
+path_to_tph_data = "/home/teamlary/Desktop/data/Joppa/001e0636e547/"
 df_pm_csv = list_csv(path_to_pm_data,"IPS7100")
 #df_wind_csv  = list_csv(path_to_wind_data,"WIMDA")
 #df_tph_csv = list_csv(path_to_tph_data,"BME680")

@@ -1,28 +1,38 @@
+
+
+include("File_Search_trial.jl")
 # Activating the variogram enviornmment
 using Pkg
-
-Pkg.activate("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/LoRa")
-using DelimitedFiles,CSV,DataFrames,Dates,Statistics,DataStructures,Plots,TimeSeries,Impute,LaTeXStrings
-using StatsBase, Statistics,Polynomials,Peaks,RollingFunctions
-#Including the wind data after analysis nad also the files search script 
-include("File_Search_trial.jl")
-#include("CentralNodeGunter_Wind_TPH.jl")
+Pkg.activate("LoRa")
 
 # Loading the packages
-using DelimitedFiles,CSV,DataFrames,Dates,Statistics,DataStructures,Plots,TimeSeries,Impute,LaTeXStrings
-using StatsBase, Statistics,Polynomials,Peaks,RollingFunctions,Parsers
+
+#using DelimitedFiles
+using CSV,DataFrames,Dates,Statistics,DataStructures,Plots
+# using TimeSeries
+using Impute,LaTeXStrings
+#using StatsBase 
+using Polynomials,Peaks,RollingFunctions
+# using Parsers
+#Including the wind data after analysis nad also the files search script 
+
+#include("CentralNodeGunter_Wind_TPH.jl")
+
+
 
 # Write a function for this part taking in the start date and end date for which the files have to be combined or do aquery from the database
 #--------------------------------- Start here------------------------------#
 # Creating a list of PM dataframe by reading in filenames for each day
-path_to_params = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/csv/"#path for csv files
+path_to_params = "/home/teamlary/Desktop/Processed_data/Parameters/csv/"#path for csv files
 df_pm_list = []
-for i in 85:1:114
+for i in 1:1:nrow(df_pm_csv)
     push!(df_pm_list, CSV.read(df_pm_csv.IPS7100[i],DataFrame))
 end
+df_pm_list_jan = df_pm_list[1:31] # Creating a subset for jan 2023
+
 # Combining all the dataframes into a single dataframe
-data_frame_pm_combined = vcat(df_pm_list...,cols=:union)
-data_frame_pm_combined = data_frame_pm_combined[:,1:15]
+data_frame_pm_combined = vcat(df_pm_list_jan...,cols=:union)
+#data_frame_pm_combined = data_frame_pm_combined[:,1:15] # is this line relevant?
 data_frame = data_frame_pm_combined 
 #--------------------------------- End here------------------------------#
 # created the rolling time window
@@ -49,49 +59,49 @@ function data_cleaning( data_frame)
     col_symbols = Symbol.(names(data_frame)) # Column symbols are saved to a variable(Names and Symbols are similar both are for obtaining the column names)
     
 
-    for i in 1:1:nrow(data_frame)
+    # for i in 1:1:nrow(data_frame)
 
-        if (typeof(data_frame[!,:pc1_0][i]) == String)
-            try
-            data_frame[!,:pc1_0][i] =  parse(Float64, data_frame[!,:pc1_0][i])
-            catch e1
-            data_frame[!,:pc1_0][i] = missing
-            end 
+    #     if (typeof(data_frame[!,:pc1_0][i]) == String)
+    #         try
+    #         data_frame[!,:pc1_0][i] =  parse(Float64, data_frame[!,:pc1_0][i])
+    #         catch e1
+    #         data_frame[!,:pc1_0][i] = missing
+    #         end 
 
-        end
-        if (typeof(data_frame[!,:pm0_5][i]) == String31)
-            try
-            data_frame[!,:pm0_5][i] =  parse(Float64, data_frame[!,:pm0_5][i])
-            catch e2
-                data_frame[!,:pm10_0][i] = missing
-            end
-        end
-        if (typeof(data_frame[!,:pm10_0][i]) == String)
-            try
-            data_frame[!,:pm10_0][i] =  parse(Float64, data_frame[!,:pm10_0][i])
-            catch e3
-                data_frame[!,:pm10_0][i] = missing
-            end
-        end
+    #     end
+    #     if (typeof(data_frame[!,:pm0_5][i]) == String31)
+    #         try
+    #         data_frame[!,:pm0_5][i] =  parse(Float64, data_frame[!,:pm0_5][i])
+    #         catch e2
+    #             data_frame[!,:pm10_0][i] = missing
+    #         end
+    #     end
+    #     if (typeof(data_frame[!,:pm10_0][i]) == String)
+    #         try
+    #         data_frame[!,:pm10_0][i] =  parse(Float64, data_frame[!,:pm10_0][i])
+    #         catch e3
+    #             data_frame[!,:pm10_0][i] = missing
+    #         end
+    #     end
         
-        if (typeof(data_frame[!,:pc1_0][i]) == Int64)
-            data_frame[!,:pc1_0][i] =  Float64(data_frame[!,:pc1_0][i])
-        end
-        if (typeof(data_frame[!,:pm0_5][i])== Int64)
-            data_frame[!,:pm0_5][i] =  Float64(data_frame[!,:pm0_5][i])
-        end
-        if (typeof(data_frame[!,:pm10_0][i]) == Int64)
-            data_frame[!,:pm10_0][i] =   Float64(data_frame[!,:pm10_0][i])
-        end
+    #     if (typeof(data_frame[!,:pc1_0][i]) == Int64)
+    #         data_frame[!,:pc1_0][i] =  Float64(data_frame[!,:pc1_0][i])
+    #     end
+    #     if (typeof(data_frame[!,:pm0_5][i])== Int64)
+    #         data_frame[!,:pm0_5][i] =  Float64(data_frame[!,:pm0_5][i])
+    #     end
+    #     if (typeof(data_frame[!,:pm10_0][i]) == Int64)
+    #         data_frame[!,:pm10_0][i] =   Float64(data_frame[!,:pm10_0][i])
+    #     end
         
 
-    end
+    #end
 
-    wl = filter(x -> isa.(x, String31), data_frame[!,:pm0_5])
-    y = findall(x -> x .== wl[1], data_frame[!,:pm0_5])
-    data_frame[!,:pm0_5][y] == missing
+    # wl = filter(x -> isa.(x, String31), data_frame[!,:pm0_5])
+    # y = findall(x -> x .== wl[1], data_frame[!,:pm0_5])
+    # data_frame[!,:pm0_5][y] == missing
 
-    data_frame = DataFrames.combine(DataFrames.groupby(data_frame, :dateTime), [:pm0_1,:pm0_3,:pm1_0,:pm2_5,:pm5_0] .=> mean) # taking the mean of all columns as there may be 
+    data_frame = DataFrames.combine(DataFrames.groupby(data_frame, :dateTime), col_symbols[2:end] .=> mean) # taking the mean of all columns as there may be 
 
     # columns with the same datetime.   
     return data_frame,col_symbols # returns the dataframe and column symbols
@@ -120,15 +130,16 @@ end
 
 data_frame_pm_updated = missing_data(data_frame_pm)
 
-CSV.write(path_to_params*"Joappa_2022.csv",data_frame_pm_combined,compress =true)#saving the combined dataframe into a csv
+CSV.write(path_to_params*"Joappa_Jan_2023_processed_data.csv",data_frame_pm_combined,compress =true)#saving the combined dataframe into a csv
 
 ts = collect(data_frame_pm_updated.dateTime[1]+Minute(15):Second(1):data_frame_pm_updated.dateTime[end] + Second(1))
 data_frame_pm_updated_rolling_mean = DataFrame()
 data_frame_pm_updated_rolling_mean.RollingTime = ts
+
 for i in names(data_frame_pm_updated)[2:end]
     data_frame_pm_updated_rolling_mean[!,i] = RollingFunctions.rolling(mean,data_frame_pm_updated[!,i],Int(900))
 end
-CSV.write(path_to_params*"PMRollingMean.csv",data_frame_pm_updated_rolling_mean)
+CSV.write(path_to_params*"Joappa_Jan_2023_PMRollingMean.csv",data_frame_pm_updated_rolling_mean)
 
 
 
@@ -182,29 +193,57 @@ function rolling_variogram(df,col)
     return range_vec,sill_vec,nugget_vec
 end
 # Created dataframes for range , sill and nugget values with the 15 minute rolling date time window
+
+
+
+dict_pm = OrderedDict(1=>"pc0.1",2=>"pc0.3",3=>"pc0.5",4=>"pc1.0",5=>"pc2.5",6=>"pc5.0",7=>"pc10.0",
+               8=>"pm0.1",9=>"pm0.3",10=>"pm0.5",11=>"pm1.0",12=>"pm2.5",13=>"pm5.0",14=>"pm10.0")
+
+
+df_range.RollingTime = ts               
+# Appending Range, Sill and Nugget values for each PC, PM column 
+for i in 1:1:7
+    println("##################################  ",i,"  #######################################")
+    df_range[!,dict_pm[i]] = rolling_variogram(data_frame_pm_updated,i)[1]
+end+
+CSV.write(path_to_params*"Range_pc.csv",df_range)
+df_range = DataFrame()
+# Appending Range, Sill and Nugget values for each PC, PM column 
+for i in 8:1:14
+    println("##################################  ",i,"  #######################################")
+    df_range[!,dict_pm[i]] = rolling_variogram(data_frame_pm_updated,i)[1]
+end
+CSV.write(path_to_params*"Range_pm.csv",df_range)
+df_range = DataFrame()
+df_range_pm = CSV.read(path_to_params*"Range_pm.csv",DataFrame)
+df_range_pc = CSV.read(path_to_params*"Range_pc.csv",DataFrame)
+
+
+df_range = outerjoin(df_range_pc,df_range_pm,on = :RollingTime)
+
+CSV.write(path_to_params*"Range.csv",df_range)
+
+for i in 1:1:14
+    println("##################################  ",i,"  #######################################")
+    df_sill[!,dict_pm[i]] = rolling_variogram(data_frame_pm_updated,i)[2]
+end
+
+CSV.write(path_to_params*"Sill.csv",df_sill)
+for i in 1:1:14
+    println("##################################  ",i,"  #######################################")
+    df_nugget[!,dict_pm[i]] = rolling_variogram(data_frame_pm_updated,i)[3]  
+end
+df_nugget = filter(row -> all(x -> x >= 0, row[2:end]), df_nugget)
+CSV.write(path_to_params*"Nugget.csv",df_nugget)
+
+
 df_range.RollingTime = ts
 df_sill.RollingTime = ts
 df_nugget.RollingTime = ts
 
 
-dict_pm = Dict(1=>"pc0.1",2=>"pc0.3",3=>"pc0.5",4=>"pc1.0",5=>"pc2.5",6=>"pc5.0",7=>"pc10.0",
-               8=>"pm0.1",9=>"pm0.3",10=>"pm0.5",11=>"pm1.0",12=>"pm2.5",13=>"pm5.0",14=>"pm10.0")
 
-# Appending Range, Sill and Nugget values for each PC, PM column 
-for i in 1:1:14
-    println("##################################  ",i,"  #######################################")
-    df_range[!,dict_pm[i]] = rolling_variogram(data_frame_pm_updated,i)[1]
-end
-for i in 1:1:14
-    println("##################################  ",i,"  #######################################")
-    df_sill[!,dict_pm[i]] = rolling_variogram(data_frame_pm_updated,i)[2]
-end
-for i in 1:1:14
-    println("##################################  ",i,"  #######################################")
-    df_nugget[!,dict_pm[i]] = rolling_variogram(data_frame_pm_updated,i)[3]  
-end
 
-df_nugget = filter(row -> all(x -> x >= 0, row[2:end]), df_nugget)
 td= 900
 ts_wind = 2
 ts_tph = 10
@@ -279,9 +318,8 @@ end
 
 
 
-path_to_params = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/csv/"
 mkpath(path_to_params)
-# CSV.write(path_to_params*"Range.csv",df_range)
+CSV.write(path_to_params*"Range.csv",df_range)
 CSV.write(path_to_params*"Sill.csv",df_sill)
 CSV.write(path_to_params*"Nugget.csv",df_nugget)
 CSV.write(path_to_params*"Wind_TPH_Range.csv",df_range_wind_tph_var)

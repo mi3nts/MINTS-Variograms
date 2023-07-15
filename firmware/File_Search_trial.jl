@@ -58,6 +58,6 @@ path_to_pm_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e063
 path_to_wind_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e06430225\\"
 path_to_tph_data = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e0636e547\\"
 df_pm_csv = list_csv(path_to_pm_data,"IPS7100")
-#df_wind_csv  = list_csv(path_to_wind_data,"WIMDA")
-#df_tph_csv = list_csv(path_to_tph_data,"BME680")
+df_wind_csv  = list_csv(path_to_wind_data,"WIMDA")
+df_tph_csv = list_csv(path_to_tph_data,"BME680")
 

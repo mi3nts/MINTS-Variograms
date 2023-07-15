@@ -2,36 +2,158 @@
 using Pkg
 
 Pkg.activate("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/LoRa")
-using DelimitedFiles,CSV,DataFrames,Dates,Statistics,DataStructures,Plots,TimeSeries,Impute,LaTeXStrings
-using StatsBase, Statistics,Polynomials,Peaks,RollingFunctions
+
 #Including the wind data after analysis nad also the files search script 
 include("File_Search_trial.jl")
-#include("CentralNodeGunter_Wind_TPH.jl")
+include("CentralNodeGunter_Wind_TPH.jl")
 
 # Loading the packages
-using DelimitedFiles,CSV,DataFrames,Dates,Statistics,DataStructures,Plots,TimeSeries,Impute,LaTeXStrings
-using StatsBase, Statistics,Polynomials,Peaks,RollingFunctions,Parsers
+#using DelimitedFiles
+using CSV,DataFrames,Dates,Statistics,DataStructures,Plots
+# using TimeSeries
+using Impute,LaTeXStrings
+#using StatsBase 
+using Polynomials,Peaks,RollingFunctions
+n_days=31
 
-# Write a function for this part taking in the start date and end date for which the files have to be combined or do aquery from the database
+# # Write a function for this part taking in the start date and end date for which the files have to be combined or do aquery from the database
+# #--------------------------------- Start here------------------------------#
+# # Creating a list of PM dataframe by reading in filenames for each day
+
+# n_days=31
+# path_to_params = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/csv/"#path for csv files
+# df_pm_list = []
+
+
+
+# for i in 1:1:nrow(df_pm_csv)
+#     if i < 10
+#         string_itr = "0" * string(i)
+#     else
+#         string_itr = string(i)
+#     end
+#     path = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/001e0636e547/2023/01/" * string_itr * "/MINTS_001e0636e547_IPS7100_2023_01_" * string_itr * ".csv"
+#     push!(df_pm_list, CSV.read(path, DataFrame))
+# end
+
+# # for i in 1:1:nrow(df_pm_csv)
+# #     push!(df_pm_list, CSV.read(df_pm_csv.IPS7100[i],DataFrame))
+# # end
+# # Combining all the dataframes into a single dataframe
+# data_frame_pm_combined = vcat(df_pm_list...,cols=:union)
+# data_frame_pm_combined = data_frame_pm_combined[:,1:15]
+# data_frame = data_frame_pm_combined 
+# #--------------------------------- End here------------------------------#
+# # created the rolling time window
+
+
+# # Function for cleaning the data
+# function data_cleaning( data_frame)
+#     ms = []
+#     # Taking in string datetime's millisecond part
+#     for x in data_frame[!,:dateTime]
+#         try
+#             push!(ms,parse(Float64,x[20:26]))
+#         catch s1
+#             push!(ms,parse(Float64,"0.000000"))
+#         end
+#     end
+#     data_frame.ms  = Second.(round.(Int,ms)) # Rounding it to the nearest millisecond and converting it to seconds
+
+#     #data_frame.dateTime = [x[1:19] for x in data_frame[!,:dateTime]]
+    
+#     #data_frame.dateTime = DateTime.(data_frame.dateTime,"yyyy-mm-dd HH:MM:SS") # Converting the dateime columns[1:19] to DateTime format in Julia
+#     data_frame.dateTime = data_frame.dateTime + data_frame.ms # Adding the converted date time to the millisecond that was rounded to seconds
+#     data_frame = select!(data_frame, Not(:ms)) # Deleting the ms column
+#     col_symbols = Symbol.(names(data_frame)) # Column symbols are saved to a variable(Names and Symbols are similar both are for obtaining the column names)
+    
+
+#     # for i in 1:1:nrow(data_frame)
+
+#     #     if (typeof(data_frame[!,:pc1_0][i]) == String)
+#     #         try
+#     #         data_frame[!,:pc1_0][i] =  parse(Float64, data_frame[!,:pc1_0][i])
+#     #         catch e1
+#     #         data_frame[!,:pc1_0][i] = missing
+#     #         end 
+
+#     #     end
+#     #     if (typeof(data_frame[!,:pm0_5][i]) == String31)
+#     #         try
+#     #         data_frame[!,:pm0_5][i] =  parse(Float64, data_frame[!,:pm0_5][i])
+#     #         catch e2
+#     #             data_frame[!,:pm10_0][i] = missing
+#     #         end
+#     #     end
+#     #     if (typeof(data_frame[!,:pm10_0][i]) == String)
+#     #         try
+#     #         data_frame[!,:pm10_0][i] =  parse(Float64, data_frame[!,:pm10_0][i])
+#     #         catch e3
+#     #             data_frame[!,:pm10_0][i] = missing
+#     #         end
+#     #     end
+        
+#     #     if (typeof(data_frame[!,:pc1_0][i]) == Int64)
+#     #         data_frame[!,:pc1_0][i] =  Float64(data_frame[!,:pc1_0][i])
+#     #     end
+#     #     if (typeof(data_frame[!,:pm0_5][i])== Int64)
+#     #         data_frame[!,:pm0_5][i] =  Float64(data_frame[!,:pm0_5][i])
+#     #     end
+#     #     if (typeof(data_frame[!,:pm10_0][i]) == Int64)
+#     #         data_frame[!,:pm10_0][i] =   Float64(data_frame[!,:pm10_0][i])
+#     #     end
+        
+
+#     # end
+
+#     # wl = filter(x -> isa.(x, String31), data_frame[!,:pm0_5])
+#     # y = findall(x -> x .== wl[1], data_frame[!,:pm0_5])
+#     # data_frame[!,:pm0_5][y] == missing
+
+#      data_frame = DataFrames.combine(DataFrames.groupby(data_frame, :dateTime), [:pc0_1, :pc0_3, :pc0_5, :pc1_0, :pc2_5, :pc5_0, :pc10_0, :pm0_1,:pm0_3, :pm0_5, :pm1_0,:pm2_5,:pm5_0, :pm10_0] .=> mean) # taking the mean of all columns as there may be 
+
+#     # columns with the same datetime.   
+#     return data_frame,col_symbols # returns the dataframe and column symbols
+# end
+
+# data_frame_pm,col_symbols = data_cleaning(data_frame_pm_combined)# Obtained the cleaned dataframe and column names
+
+
+
+
+
+
 #--------------------------------- Start here------------------------------#
-# Creating a list of PM dataframe by reading in filenames for each day
-path_to_params = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/csv/"#path for csv files
+
+path_to_params = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/csv/" #path for csv files
+
+#code to aggregate the data for the month of january
+#changed the column names to fix the pm 0.5 error, code should be working for all time scales (e.g. month, year)
 df_pm_list = []
-for i in 85:1:114
-    push!(df_pm_list, CSV.read(df_pm_csv.IPS7100[i],DataFrame))
+for i in 1:1:nrow(df_pm_csv)
+    if i < 10
+        string_itr = "0" * string(i)
+    else
+        string_itr = string(i)
+    end
+    path = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/001e0636e547/2023/01/" * string_itr * "/MINTS_001e0636e547_IPS7100_2023_01_" * string_itr * ".csv"
+    push!(df_pm_list, CSV.read(path, DataFrame))
 end
-# Combining all the dataframes into a single dataframe
 data_frame_pm_combined = vcat(df_pm_list...,cols=:union)
-data_frame_pm_combined = data_frame_pm_combined[:,1:15]
-data_frame = data_frame_pm_combined 
-#--------------------------------- End here------------------------------#
-# created the rolling time window
 
+# data_frame_pm_combined = CSV.read("C:/Users/va648/Downloads/VSCode/MINTS-LoRa-Variograms/firmware/data/001e0636e547/2023/01/24/MINTS_001e0636e547_IPS7100_2023_01_24.csv", DataFrame)
 
-# Function for cleaning the data
-function data_cleaning( data_frame)
+# df_pm_list = []
+# for i in 1:1:126
+#     push!(df_pm_list, CSV.read(df_pm_csv.IPS7100[i], DataFrame))
+# end
+# # Combining all the dataframes into a single dataframe
+# data_frame_pm_combined = vcat(df_pm_list...,cols=:union)
+# data_frame_pm_combined = CSV.read("C:/Users/va648/Downloads/VSCode/MINTS-LoRa-Variograms/firmware/data/001e0636e547/2023/01/03/MINTS_001e0636e547_IPS7100_2023_01_03.csv", DataFrame)
+
+function data_cleaning(data_frame)
     ms = []
-    # Taking in string datetime's millisecond part
+
     for x in data_frame[!,:dateTime]
         try
             push!(ms,parse(Float64,x[20:26]))
@@ -39,15 +161,15 @@ function data_cleaning( data_frame)
             push!(ms,parse(Float64,"0.000000"))
         end
     end
-    data_frame.ms  = Second.(round.(Int,ms)) # Rounding it to the nearest millisecond and converting it to seconds
+    data_frame.ms  = Second.(round.(Int,ms))
     
     data_frame.dateTime = [x[1:19] for x in data_frame[!,:dateTime]]
     
     data_frame.dateTime = DateTime.(data_frame.dateTime,"yyyy-mm-dd HH:MM:SS") # Converting the dateime columns[1:19] to DateTime format in Julia
     data_frame.dateTime = data_frame.dateTime + data_frame.ms # Adding the converted date time to the millisecond that was rounded to seconds
     data_frame = select!(data_frame, Not(:ms)) # Deleting the ms column
-    col_symbols = Symbol.(names(data_frame)) # Column symbols are saved to a variable(Names and Symbols are similar both are for obtaining the column names)
-    
+    #col_symbols = Symbol.(names(data_frame)) 
+    col_symbols = [:pc0_1, :pc0_3, :pc0_5, :pc1_0, :pc2_5, :pc5_0, :pc10_0 ,:pm0_1, :pm0_3, :pm0_5, :pm1_0, :pm2_5, :pm5_0, :pm10_0]
 
     for i in 1:1:nrow(data_frame)
 
@@ -57,9 +179,8 @@ function data_cleaning( data_frame)
             catch e1
             data_frame[!,:pc1_0][i] = missing
             end 
-
         end
-        if (typeof(data_frame[!,:pm0_5][i]) == String31)
+        if (typeof(data_frame[!,:pm0_5][i]) == String31) 
             try
             data_frame[!,:pm0_5][i] =  parse(Float64, data_frame[!,:pm0_5][i])
             catch e2
@@ -87,24 +208,23 @@ function data_cleaning( data_frame)
 
     end
 
-    wl = filter(x -> isa.(x, String31), data_frame[!,:pm0_5])
-    y = findall(x -> x .== wl[1], data_frame[!,:pm0_5])
-    data_frame[!,:pm0_5][y] == missing
+    # wl = filter(x -> isa.(x, String31), data_frame[!,:pm0_5])
+    # y = findall(x -> x .== wl[1], data_frame[!,:pm0_5])
+    # data_frame[!,:pm0_5][y] == missing
 
-    data_frame = DataFrames.combine(DataFrames.groupby(data_frame, :dateTime), [:pm0_1,:pm0_3,:pm1_0,:pm2_5,:pm5_0] .=> mean) # taking the mean of all columns as there may be 
+    data_frame = DataFrames.combine(DataFrames.groupby(data_frame, :dateTime), [:pc0_1, :pc0_3, :pc0_5, :pc1_0, :pc2_5, :pc5_0, :pc10_0, :pm0_1,:pm0_3, :pm0_5, :pm1_0,:pm2_5,:pm5_0, :pm10_0] .=> mean) # what exactly does this do
 
-    # columns with the same datetime.   
-    return data_frame,col_symbols # returns the dataframe and column symbols
+    return data_frame, col_symbols # returns the dataframe and column symbols
 end
 
-data_frame_pm,col_symbols = data_cleaning(data_frame_pm_combined)# Obtained the cleaned dataframe and column names
+data_frame_pm, col_symbols = data_cleaning(data_frame_pm_combined)# Obtained the cleaned dataframe and column names
 
 df_range = DataFrame()
 df_sill = DataFrame()
 df_nugget = DataFrame()
 
 
-function missing_data(data_frame)
+function missing_data(data_frame,col_symbols)
     df = DataFrame()
     df.dateTime = collect(data_frame.dateTime[1]:Second(1):data_frame.dateTime[end])
     df = outerjoin( df,data_frame, on = :dateTime)[1:length(df.dateTime),:]
@@ -112,15 +232,16 @@ function missing_data(data_frame)
     #df = outerjoin( df,data_frame, on = :dateTime)[1:2000,:] # repalce this with the above statement
     #=========================================================================================#   
     sort!(df, (:dateTime))
-    df = DataFrames.rename!(df, col_symbols)
+    pushfirst!(col_symbols, :dateTime)
     df = Impute.locf(df)|>Impute.nocb()
+    df = DataFrames.rename!(df, col_symbols)
     return df
 end
 
 
-data_frame_pm_updated = missing_data(data_frame_pm)
+data_frame_pm_updated = missing_data(data_frame_pm,col_symbols)
 
-CSV.write(path_to_params*"Joappa_2022.csv",data_frame_pm_combined,compress =true)#saving the combined dataframe into a csv
+CSV.write(path_to_params*"Joappa_Jan_2023.csv",data_frame_pm_updated,compress =true)#saving the combined dataframe into a csv
 
 ts = collect(data_frame_pm_updated.dateTime[1]+Minute(15):Second(1):data_frame_pm_updated.dateTime[end] + Second(1))
 data_frame_pm_updated_rolling_mean = DataFrame()
@@ -132,7 +253,7 @@ CSV.write(path_to_params*"PMRollingMean.csv",data_frame_pm_updated_rolling_mean)
 
 
 
-
+data_frame = Nothing
 function rolling_variogram(df,col) 
     df_mat = df[:,2:end]
     mat = Matrix(df_mat[1:nrow(df),:])[:,col]
@@ -182,9 +303,7 @@ function rolling_variogram(df,col)
     return range_vec,sill_vec,nugget_vec
 end
 # Created dataframes for range , sill and nugget values with the 15 minute rolling date time window
-df_range.RollingTime = ts
-df_sill.RollingTime = ts
-df_nugget.RollingTime = ts
+
 
 
 dict_pm = Dict(1=>"pc0.1",2=>"pc0.3",3=>"pc0.5",4=>"pc1.0",5=>"pc2.5",6=>"pc5.0",7=>"pc10.0",
@@ -205,9 +324,15 @@ for i in 1:1:14
 end
 
 df_nugget = filter(row -> all(x -> x >= 0, row[2:end]), df_nugget)
+
+
+df_range.RollingTime = ts
+df_sill.RollingTime = ts
+df_nugget.RollingTime = ts
+
 td= 900
-ts_wind = 2
-ts_tph = 10
+ts_wind =  Int(floor((n_days*24*60*60)/size(df_wind)[1]))
+ts_tph = Int(floor((n_days*24*60*60)/size(df_tph)[1]))
 wd_rolling_mean = RollingFunctions.rolling(mean,df_wind.windDirectionTrue,Int(td/ts_wind))
 ws_rolling_mean = RollingFunctions.rolling(mean,df_wind.windSpeedMetersPerSecond,Int(td/ts_wind))
 rolling_time_wind = collect(df_wind.dateTime[1]+Minute(15):Second(ts_wind):df_wind.dateTime[end]+Second(ts_wind))
@@ -228,9 +353,24 @@ df_tph_avg = DataFrame(RollingTime = rolling_time_tph,
                        MeanPressure = press_rolling_mean,
                        MeanHumidity = hum_rolling_mean)
 
+#Example sort!(unique!(outerjoin(df_wind_avg,df_tph_avg,on = :RollingTime),:RollingTime),(:RollingTime))
+df_range = df_range[:,1:15]
 df_range_wind_tph_var = sort!(outerjoin(outerjoin(df_range,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime),[:RollingTime])
 df_sill_wind_tph_var = sort!(outerjoin(outerjoin(df_sill,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime),[:RollingTime])
 df_nugget_wind_tph_var = sort!(outerjoin(outerjoin(df_nugget,df_wind_avg,on = :RollingTime),df_tph_avg,on = :RollingTime),[:RollingTime])
+
+
+
+###################################### Do this for all the sill range and nugget values ###########################################
+# Function to count the number of missing values in a row
+count_missing(row) = count(ismissing, row)
+
+# Iterate over rows and count missing values
+missing_counts = [count_missing(row) for row in eachrow(df_range_wind_tph_var[:,2:15])]
+
+indices = findall(x -> x == 14, missing_counts)
+delete!(df_range_wind_tph_var, indices)
+
 
 
 
@@ -281,7 +421,7 @@ end
 
 path_to_params = "D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/csv/"
 mkpath(path_to_params)
-# CSV.write(path_to_params*"Range.csv",df_range)
+CSV.write(path_to_params*"Range.csv",df_range)
 CSV.write(path_to_params*"Sill.csv",df_sill)
 CSV.write(path_to_params*"Nugget.csv",df_nugget)
 CSV.write(path_to_params*"Wind_TPH_Range.csv",df_range_wind_tph_var)
@@ -294,6 +434,8 @@ df_nugget = CSV.read(path_to_params*"Nugget.csv",DataFrame)
 df_range_wind_tph_var = CSV.read(path_to_params*"Wind_TPH_Range.csv",DataFrame)
 df_sill_wind_tph_var = CSV.read(path_to_params*"Wind_TPH_Sill.csv",DataFrame)
 df_nugget_wind_tph_var = CSV.read(path_to_params*"Wind_TPH_Nugget.csv",DataFrame)
+
+
 
 
 

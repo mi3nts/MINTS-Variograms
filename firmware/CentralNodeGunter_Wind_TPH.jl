@@ -7,7 +7,8 @@ include("File_Search_trial.jl")
 
 df_wind_list = []
 df_tph_list = []
-for i in 1:1:7
+n_days=31
+for i in 1:1:n_days
     push!(df_wind_list, CSV.read(df_wind_csv.WIMDA[i],DataFrame))
     push!(df_tph_list, CSV.read(df_tph_csv.BME680[i],DataFrame))
 end
@@ -61,22 +62,19 @@ data_frame_tph,cols_tph = data_cleaning(data_frame_tph_combined,"BME680")
 
 
 
-function dataframe_updates(data_frame,cols,sensor_type)
-    
-    if (sensor_type == "WIMDA")
-        time_to_round = 2
-    elseif (sensor_type == "BME680")
-        time_to_round = 10
-    elseif (sensor_type == "SCD30")
-        time_to_round = 10
-    end
+function dataframe_updates(data_frame,cols)
+    #  data_frame = data_frame_wind
+    #  sensor_type = "WIMDA"
+    #  cols = cols_wind 
+    time_to_round = Int(floor((n_days*24*60*60)/size(data_frame)[1]))
     data_frame.dateTime = round.(data_frame.dateTime, Dates.Second(time_to_round))
-
+    
     ################### Some issue with imputation logic, need to fix it ###################### Believe its fixed
     df = DataFrame()
-    df.dateTime = collect(DateTime(2023,01,01):Second(time_to_round):DateTime(2023,01,08)-Second(1))
+    df.dateTime = collect(data_frame.dateTime[1]:Second(time_to_round):data_frame.dateTime[end]-Second(1))
     df = outerjoin( df,data_frame, on = :dateTime)
     sort!(df, (:dateTime))
+    unique!(df, :dateTime)
     println(cols)
     df = DataFrames.rename!(df, cols)
     df_sensor = Impute.locf(df)|>Impute.nocb()
@@ -86,8 +84,8 @@ function dataframe_updates(data_frame,cols,sensor_type)
     return df_sensor
 end
 
-df_wind = dataframe_updates(data_frame_wind, cols_wind,"WIMDA")
-df_tph = dataframe_updates(data_frame_tph,cols_tph,"BME680")
+df_wind = dataframe_updates(data_frame_wind, cols_wind)
+df_tph = dataframe_updates(data_frame_tph,cols_tph)
 #df_co2 = dataframe_updates(data_frame_c02,cols_c02,"SCD30")
 
 

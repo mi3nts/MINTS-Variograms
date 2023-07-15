@@ -1,9 +1,10 @@
 using Pkg
-
-Pkg.activate("D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\LoRa")
-
-using BenchmarkTools, CSV,DataFrames,Dates,Statistics,DataStructures,Plots,TimeSeries,Impute,LaTeXStrings,FFTW,StatsBase,Statistics,Polynomials,Peaks,Roots,IJulia
-
+Pkg.activate("/home/teamlary/Desktop/MINTS-Variograms/firmware/LoRa")
+using CSV,DataFrames,Dates,Statistics,DataStructures,Plots
+# using TimeSeries
+using Impute,LaTeXStrings
+#using StatsBase 
+using Polynomials,Peaks,RollingFunctions
 function data_cleaning( path_to_csv)
     data_frame = CSV.read(path_to_csv,DataFrame)
     ms = [parse(Float64,x[20:26]) for x in data_frame[!,:dateTime]]
@@ -16,7 +17,7 @@ function data_cleaning( path_to_csv)
     data_frame = DataFrames.combine(DataFrames.groupby(data_frame, :dateTime), col_symbols[2:end] .=> mean)
     return data_frame,col_symbols
 end
-path_to_ips7100 = "D:\\UTD\\UTDFall2022\\VariogramsLoRa\\firmware\\data\\001e0636e547\\2023\\01\\03\\MINTS_001e0636e547_IPS7100_2023_01_03.csv"
+path_to_ips7100 = "/home/teamlary/Desktop/data/Joppa/001e0636e547/2023/01/03//MINTS_001e0636e547_IPS7100_2023_01_03.csv"
 col_symbols = data_cleaning(path_to_ips7100)[2]
 data_frame = data_cleaning(path_to_ips7100)[1]
 
@@ -50,19 +51,23 @@ y_vals = names(df_hourly)[2:end]
 xlab = "DateTime"
 lab = [strpm0_1, strpm0_3, strpm0_5, strpm1_0, strpm2_5, strpm5_0, strpm10_0]
 
-# for i in 1:length(lab)
-    i = 5
-    plot()
-    #p = 
-    plot(Time.(df_hourly.dateTime)[1:24],df_hourly[!,y_vals[i]][1:24], xlabel = "Time " ,
-    title = "2023-01-03",ylabel = lab[i]*" Concentration "*y_unit,xticks = Time("00:00"):Hour(3):Time("23:59"),
-    linewidth=4, label = "",legendfontsize=12, xrotation = 45,size=(400,400))
-    hline!([35], color=:darkred, label="WHO Standard",linestyle=:dash)
-    png("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/PM2.5 Hourly time series")
-    p=0
 
-# end
+#changed title, EPA, EU standards here
+plot()
+p = 
+plot(Time.(df_hourly.dateTime)[1:24],df_hourly[!,y_vals[5]][1:24], xlabel = "Time" ,
+    title = "01-03-2023",ylabel = lab[5]*" Concentration "*y_unit,xticks = Time("00:00"):Hour(3):Time("23:59"), yticks = [0, 5, 10, 15, 20, 25, 30, 35, 40],
+    linewidth=4, label = "",legendfontsize=6, xrotation = 45,size=(400,400), legend = :outertopright)
+hline!([35], color=:darkred, label="EPA Standard",linestyle=:dash)
+hline!([15], color=:darkgreen, label="WHO Standard",linestyle=:dash)
+hline!([20], color=:darkblue, label="EU Standard",linestyle=:dash)
+png("/home/teamlary/Desktop/Processed_data/Plots/pm2_5_hourly_timeseries.png")
+
 display(p)
+
+
+
+
 
 ## Imputing the empty spaces with the Nearest Value
 
@@ -75,11 +80,16 @@ sort!(df, (:dateTime))
 df = DataFrames.rename!(df, col_symbols)
 df = Impute.locf(df)
 i=5
-plot(Time.(df.dateTime)[1:end-1],df[!,"pm2_5"][1:end-1], xlabel = "Time " ,
-    title = "2023-01-03",ylabel = lab[i]*" Concentration "*y_unit,xticks = Time("00:00"):Hour(3):Time("23:59"),
-    linewidth=4, label = "",legendfontsize=12, xrotation = 45,)
-    hline!([35], color=:darkred, label="WHO Standard",linestyle=:dash,size=(400,400))
-    png("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/PM2.5 time series")
+#changed title, EPA, EU standards here
+p = plot(Time.(df.dateTime)[1:end-1],df[!,"pm2_5"][1:end-1], xlabel = "Time" ,
+    title = "01-03-2023",ylabel = lab[i]*" Concentration "*y_unit,xticks = Time("00:00"):Hour(3):Time("23:59"),
+    linewidth=4, label = "",legendfontsize=6, xrotation = 45,size=(400,400),legend = :outertopright)
+hline!([35], color=:darkred, label="EPA Standard",linestyle=:dash)
+hline!([15], color=:darkgreen, label="WHO Standard",linestyle=:dash)
+hline!([20], color=:darkblue, label="EU Standard",linestyle=:dash)
+png("/home/teamlary/Desktop/Processed_data/Plots/pm2_5_second_wise_timeseries.png")
+display(p)
+
 
 
 df_mat = select!(df, Not(col_symbols[1:8]))
@@ -108,11 +118,14 @@ n = [["Δt"];names(df)]
 DataFrames.rename!(γ,n)
 γ = transform!(γ, names(γ) .=> ByRow(Float64), renamecols=false)
 
+#0.956
 for i in 1:length(lab)
     #PM values
     plot(γ.Δt,γ[!,y_vals[i]],xlabel ="Δt(minutes)" ,ylabel= "Variogram (γ(Δt))", title = "2023-01-03",legend=:outertopright ,linewidth=4, legendfontsize=12,label=lab[i],xticks= 0:3:120, xrotation = 90)
-    plot!([findmaxima(γ[!,y_vals[i]])[2][1]], seriestype="hline",label= "",line=(:dot, 4))
-    plot!([γ.Δt[findmaxima(γ[!,y_vals[i]])[1][1]]], seriestype="vline",label= "",line=(:dot, 4))
+    plot!([findmaxima(γ[!,y_vals[i]])[2][1]], seriestype="hline",label= "Sill",line=(:dot, 4))
+    plot!([γ.Δt[findmaxima(γ[!,y_vals[i]])[1][1]]], seriestype="vline",label= "Range",line=(:dot, 4))
+
+    
     x_intersect = round(γ.Δt[findmaxima(γ[!,y_vals[i]])[1][1]];digits=3)
     y_intersect = round(findmaxima(γ[!,y_vals[i]])[2][1];digits=3)
     x_min, x_max = extrema(γ.Δt)
@@ -122,10 +135,16 @@ for i in 1:length(lab)
     annotate!(text_x, text_y, text("($x_intersect, $y_intersect)", font(8), :left))
     scatter!([x_intersect], [y_intersect], markershape=:xcross, markercolor=:black, markersize=6,markerstrokewidth = 4,label = "")
     display(plot!(Polynomials.fit(γ.Δt,γ[!,y_vals[i]],7),γ.Δt[1],γ.Δt[end],label = "Fit"))
-    png("D:/UTD/UTDFall2022/VariogramsLoRa/firmware/data/Parameters/"*string(i))
+    png("/home/teamlary/Desktop/Processed_data/Plots/"*string(i)*".png")
 
     println("(range,sill,nugget) = ",(round(γ.Δt[findmaxima(γ[!,y_vals[i]])[1][1]];digits=3),round(findmaxima(γ[!,y_vals[i]])[2][1];digits=3),round(Polynomials.fit(γ.Δt,γ[!,y_vals[i]],7)(0);digits=3)))
     
 end
-# df_mat.pm0_1
-# StatsModels.lag(df_mat.pm0_1,2)
+
+
+#Code for changing time zone
+
+using Dates
+using TimeZones
+zdt = ZonedDateTime(2014, 1, 1, tz"UTC")
+astimezone(zdt, tz"America/Chicago")

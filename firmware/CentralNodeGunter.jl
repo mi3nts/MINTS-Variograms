@@ -17,8 +17,11 @@ using Polynomials,Peaks,RollingFunctions
 #Including the wind data after analysis nad also the files search script 
 
 #include("CentralNodeGunter_Wind_TPH.jl")
-
-
+######## Convert datetim time zone to central time ########
+using Dates
+using TimeZones
+zdt = ZonedDateTime(2014, 1, 1, tz"UTC")
+astimezone(zdt, tz"America/Chicago")
 
 # Write a function for this part taking in the start date and end date for which the files have to be combined or do aquery from the database
 #--------------------------------- Start here------------------------------#

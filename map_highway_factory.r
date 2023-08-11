@@ -45,7 +45,8 @@ library("tibble")
 # make map
 
 
-traj_csv = read.csv("C:/Users/va648/Downloads/VSCode/MINTS-LoRa-Variograms/firmware/data/cleaned trajcsv/vardhanjan0130winter2023010200.csv")
+#init first traj
+traj_csv = read.csv("C:/Users/va648/Downloads/VSCode/MINTS-LoRa-Variograms/firmware/data/cleaned trajcsv/combined.csv")
 parsed_date = as.POSIXct(traj_csv$date)
 traj_tibble = as_tibble(traj_csv)
 traj_tibble$date = parsed_date
@@ -68,20 +69,37 @@ traj_tibble = subset(traj_tibble, select = -c(Timestep.1,Potential_Temperature,T
 parsed_date = as.POSIXct(traj_csv$date)
 traj_tibble$date = parsed_date
 
-highway_lat = c(32.71379351677992, 32.705181559895564, 32.747219466295775, 32.66690548349706, 32.6979871429794)
-highway_lon = c(-96.7566923885297, -96.74183041169637, -96.74881260359592, -96.71677392679625, -96.82354805077327)
-railroad_lat = c(32.714904067912194, 32.73180868017088, 32.71172587750489)
-railroad_lon = c(-96.75033979355528, -96.70912082517053, -96.7596750245495)
+my_map <- trajMap(traj_tibble, colour="date")
 
-data <- data.frame(
-  Type = c("Highway", "Highway", "Highway", "Highway", "Highway", "Railroad", "Railroad", "Railroad"),
-  Latitude = c(highway_lat, railroad_lat),
-  Longitude = c(highway_lon, railroad_lon)
+
+circle_lat <- 32.715
+circle_lon <- -96.748
+
+my_map %>%
+addCircleMarkers(
+  lng = circle_lon,
+  lat = circle_lat,
+  radius = 10,
+  color = "green",
+  popup = "Circle Marker"
 )
 
+my_map %>% addCircleMarkers(data = coordinates,lng = ~long, lat = ~lat,
+             popup = ~SITE,
+             label = ~SITE)
+  
 
-# my_map <- leaflet(data = data) %>%
-#   addTiles()
+# highway_lat = c(32.71379351677992, 32.705181559895564, 32.747219466295775, 32.66690548349706, 32.6979871429794)
+# highway_lon = c(-96.7566923885297, -96.74183041169637, -96.74881260359592, -96.71677392679625, -96.82354805077327)
+# railroad_lat = c(32.714904067912194, 32.73180868017088, 32.71172587750489)
+# railroad_lon = c(-96.75033979355528, -96.70912082517053, -96.7596750245495)
+
+# data <- data.frame(
+#   Type = c("Highway", "Highway", "Highway", "Highway", "Highway", "Railroad", "Railroad", "Railroad"),
+#   Latitude = c(highway_lat, railroad_lat),
+#   Longitude = c(highway_lon, railroad_lon)
+# )
+
 
 # highway_icon <- awesomeIcons(
 #   icon = "car",
@@ -113,21 +131,3 @@ data <- data.frame(
 #     )
 # }
 
-my_map <- trajMap(traj_tibble)
-
-# my_map %>%
-# addCircleMarkers(data = coordinates,lng = ~long, lat = ~lat,
-#           popup = ~SITE,
-#           label = ~SITE)
-
-circle_lat <- 32.715
-circle_lon <- -96.748
-
-my_map %>%
-addCircleMarkers(
-  lng = circle_lon,
-  lat = circle_lat,
-  radius = 10,
-  color = "green",
-  popup = "Circle Marker"
-)

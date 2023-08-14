@@ -1,4 +1,4 @@
-library(raster)
+#library(raster)
 #library(ncdf4)
 
 #download.file(url = 'ftp://ftp.hpc.ncep.noaa.gov/grib/20130815/p06m_2013081500f030.grb', destfile = 'test.grb')
@@ -178,5 +178,5 @@ mydata_sample = subset(mydata_sample, select = -c(so2,no2,o3,nox,co,pm25))
 #mydata_samp$pm10_0 = wind_data$pm10_0
 
 polarPlot( mydata_sample, pollutant = "pm10",main = title,k =30,cols = rev_default_col,key.position = "bottom",
-           key.header = TeX('$\\PM_{10.0} \\ Range(Minutes) $') ,  key.footer =NULL,
+           key.header = TeX('$\\PM_{10.0} \\ Measurement Time (Minutes) $') ,  key.footer =NULL,
           limits = c(lim[1],lim[2]),par.settings=list(fontsize=list(text=10)))
